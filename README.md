@@ -8,12 +8,12 @@ An important goal of the project is to be well documented and easy to follow for
 
 ## Feature Goals
 
-[] Transform simple assets like pug templates or less files
-[] Minimal core, pluggable architecture
-[] Fingerprint assets
-[] Live-reload development server
-[] No webpack
-[] No complicated frameworks
+- [ ] Transform simple assets like pug templates or less files
+- [ ] Minimal core, pluggable architecture
+- [ ] Fingerprint assets
+- [ ] Live-reload development server
+- [ ] No webpack
+- [ ] No complicated frameworks
 
 ## License
 
