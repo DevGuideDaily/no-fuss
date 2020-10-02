@@ -1,0 +1,15 @@
+{
+	"compilerOptions": {
+		"strict": true,
+		"esModuleInterop": true,
+		"target": "ES2017",
+		"module": "CommonJS",
+		"outDir": "bin",
+		"lib": [
+			"ESNext"
+		]
+	},
+	"include": [
+		"lib/**/*"
+	]
+}
