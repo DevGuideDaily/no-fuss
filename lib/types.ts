@@ -1,8 +1,10 @@
 export type Dictionary<T> = Record<string, T | undefined> & Object;
 
+type FileData = string | ArrayBuffer;
+
 export interface FileSystem {
-	read: (path: string) => string;
-	write: (path: string, data: string) => void;
+	read: (path: string) => FileData;
+	write: (path: string, data: FileData) => void;
 	watch: (dirPath: string, params: WatchFilesParams) => void;
 }
 
@@ -12,11 +14,11 @@ interface WatchFilesParams {
 }
 
 export interface Transformer {
-	transform: (source: string) => Promise<string> | string;
+	transform: (data: string) => Promise<string> | string;
 }
 
 export interface Parser {
-	parse: (rootPath: string, filePath: string, source: string) => ParseResult;
+	parse: (rootPath: string, filePath: string, data: string) => ParseResult;
 }
 
 export interface ParseResult {

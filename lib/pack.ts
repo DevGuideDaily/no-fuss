@@ -39,8 +39,12 @@ export const pack = ({
 		const { ext } = parsePath(filePath);
 		const parser = parsers[ext];
 		if (!parser) return [];
-		const source = fileSystem.read(filePath);
-		return parser.parse(rootPath, filePath, source).dependencies;
+		const data = fileSystem.read(filePath);
+		if (typeof data === "string") {
+			return parser.parse(rootPath, filePath, data).dependencies;
+		} else {
+			return [];
+		}
 	}
 
 	const bubbleUp = async (childPath: string, processFile: (path: string) => Promise<void>) => {
@@ -61,8 +65,12 @@ export const pack = ({
 		const { base, ext } = parsePath(srcFilePath);
 		const { transform } = transformers[ext] ?? defaultTransformer;
 		const tmpFilePath = joinPath(tmpDirPath, base);
-		const transformed = await transform(fileSystem.read(srcFilePath));
-		fileSystem.write(tmpFilePath, transformed);
+		const data = fileSystem.read(srcFilePath);
+		if (typeof data === "string") {
+			fileSystem.write(tmpFilePath, await transform(data));
+		} else {
+			fileSystem.write(tmpFilePath, data);
+		}
 	}
 
 	fileSystem.watch(srcDirPath, {
