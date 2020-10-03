@@ -1,12 +1,11 @@
-import { pack } from "./pack";
+import { transformSources } from "./pack";
 import { readFileSync, outputFileSync } from "fs-extra";
 import glob from "glob";
 import { join } from "path";
 
-pack({
+transformSources({
 	srcDirPath: "test/src",
 	tmpDirPath: "test/tmp",
-	distDirPath: "test/dist",
 	parsers: {},
 	transformers: {},
 	fileSystem: {

@@ -3,7 +3,6 @@ import { parse as parsePath, join as joinPath, resolve as resolvePath } from "pa
 
 interface PackParams {
 	srcDirPath: string;
-	distDirPath: string;
 	tmpDirPath: string;
 	parsers: Dictionary<Parser>;
 	transformers: Dictionary<Transformer>;
@@ -15,7 +14,7 @@ const noopTransformer: Transformer = {
 	transform: source => source
 };
 
-export const pack = ({
+export const transformSources = ({
 	srcDirPath,
 	tmpDirPath,
 	parsers,
@@ -25,11 +24,10 @@ export const pack = ({
 }: PackParams) => {
 	const absSrcDirPath = resolvePath(srcDirPath);
 	const absTmpDirPath = resolvePath(tmpDirPath);
-
 	const depsByAbsChildPath: Dictionary<Set<String>> = {};
 
 	const addToDepTree = (rootPath: string, absParentPath: string) => {
-		getDepChildPaths(rootPath, absParentPath)
+		getAbsDepChildPaths(rootPath, absParentPath)
 			.filter(absChildPath => absChildPath !== absParentPath)
 			.forEach(absChildPath => {
 				const childDeps = depsByAbsChildPath[absChildPath] ?? new Set();
@@ -44,7 +42,7 @@ export const pack = ({
 			depsByAbsChildPath[childPath]?.delete(path);
 	}
 
-	const getDepChildPaths = (rootPath: string, filePath: string) => {
+	const getAbsDepChildPaths = (rootPath: string, filePath: string) => {
 		const { ext } = parsePath(filePath);
 		const parser = parsers[ext];
 		if (!parser) return [];
@@ -59,13 +57,13 @@ export const pack = ({
 
 	const bubbleUp = async (absChildPath: string, processFile: (path: string) => Promise<void>) => {
 		await processFile(absChildPath);
-		const parentPaths = getParentPaths(absChildPath);
+		const parentPaths = getAbsParentPaths(absChildPath);
 		for (const parentPath of parentPaths) {
 			await bubbleUp(parentPath, processFile);
 		}
 	}
 
-	const getParentPaths = (absChildPath: string) => {
+	const getAbsParentPaths = (absChildPath: string) => {
 		return Object.entries(depsByAbsChildPath[absChildPath] ?? {})
 			.filter(entry => !!entry[1])
 			.map(entry => entry[0]);;
@@ -73,8 +71,8 @@ export const pack = ({
 
 	const transformFile = async (absFilePath: string) => {
 		const { base, ext } = parsePath(absFilePath);
-		const { transform } = transformers[ext] ?? defaultTransformer;
 		const absTmpFilePath = joinPath(absTmpDirPath, base);
+		const { transform } = transformers[ext] ?? defaultTransformer;
 		const data = fileSystem.read(absFilePath);
 		if (typeof data === "string") {
 			fileSystem.write(absTmpFilePath, await transform(data));
@@ -91,3 +89,4 @@ export const pack = ({
 		},
 	});
 }
+
