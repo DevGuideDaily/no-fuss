@@ -9,8 +9,8 @@ export interface FileSystem {
 }
 
 interface WatchFilesParams {
-	onUpdate: (path: string) => void;
-	onRemove: (path: string) => void;
+	onUpdate: (absPath: string) => void;
+	onRemove: (absPath: string) => void;
 }
 
 export interface Transformer {
@@ -22,5 +22,9 @@ export interface Parser {
 }
 
 export interface ParseResult {
-	dependencies: string[];
+	depsByAbsChildPath: Dictionary<Dependency>;
+}
+
+export interface Dependency {
+	sources: string[];
 }

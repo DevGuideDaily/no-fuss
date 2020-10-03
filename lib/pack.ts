@@ -1,5 +1,5 @@
 import { Dictionary, FileSystem, Parser, Transformer } from "./types";
-import { parse as parsePath, join as joinPath } from "path";
+import { parse as parsePath, join as joinPath, resolve as resolvePath } from "path";
 
 interface PackParams {
 	srcDirPath: string;
@@ -23,65 +23,71 @@ export const pack = ({
 	defaultTransformer = noopTransformer,
 	fileSystem,
 }: PackParams) => {
-	const depTree: Dictionary<Set<String>> = {};
+	const absSrcDirPath = resolvePath(srcDirPath);
+	const absTmpDirPath = resolvePath(tmpDirPath);
 
-	const addToDepTree = (rootPath: string, parentPath: string) => {
-		getDeps(rootPath, parentPath)
-			.filter(childPath => childPath !== parentPath)
-			.forEach(childPath => {
-				const childDeps = depTree[childPath] ?? new Set();
-				childDeps.add(parentPath);
-				depTree[childPath] = childDeps;
+	const depsByAbsChildPath: Dictionary<Set<String>> = {};
+
+	const addToDepTree = (rootPath: string, absParentPath: string) => {
+		getDepChildPaths(rootPath, absParentPath)
+			.filter(absChildPath => absChildPath !== absParentPath)
+			.forEach(absChildPath => {
+				const childDeps = depsByAbsChildPath[absChildPath] ?? new Set();
+				childDeps.add(absParentPath);
+				depsByAbsChildPath[absChildPath] = childDeps;
 			});
 	}
 
-	const getDeps = (rootPath: string, filePath: string) => {
+	const removeFromDepTree = (path: string) => {
+		delete depsByAbsChildPath[path];
+		for (const childPath in depsByAbsChildPath)
+			depsByAbsChildPath[childPath]?.delete(path);
+	}
+
+	const getDepChildPaths = (rootPath: string, filePath: string) => {
 		const { ext } = parsePath(filePath);
 		const parser = parsers[ext];
 		if (!parser) return [];
 		const data = fileSystem.read(filePath);
 		if (typeof data === "string") {
-			return parser.parse(rootPath, filePath, data).dependencies;
+			const { depsByAbsChildPath } = parser.parse(rootPath, filePath, data);
+			return Object.keys(depsByAbsChildPath);
 		} else {
 			return [];
 		}
 	}
 
-	const bubbleUp = async (childPath: string, processFile: (path: string) => Promise<void>) => {
-		await processFile(childPath);
-		const parentPaths = getParentPaths(childPath);
+	const bubbleUp = async (absChildPath: string, processFile: (path: string) => Promise<void>) => {
+		await processFile(absChildPath);
+		const parentPaths = getParentPaths(absChildPath);
 		for (const parentPath of parentPaths) {
 			await bubbleUp(parentPath, processFile);
 		}
 	}
 
-	const getParentPaths = (childPath: string) => {
-		return Object.entries(depTree[childPath] ?? {})
+	const getParentPaths = (absChildPath: string) => {
+		return Object.entries(depsByAbsChildPath[absChildPath] ?? {})
 			.filter(entry => !!entry[1])
 			.map(entry => entry[0]);;
 	}
 
-	const transformFile = async (srcFilePath: string) => {
-		const { base, ext } = parsePath(srcFilePath);
+	const transformFile = async (absFilePath: string) => {
+		const { base, ext } = parsePath(absFilePath);
 		const { transform } = transformers[ext] ?? defaultTransformer;
-		const tmpFilePath = joinPath(tmpDirPath, base);
-		const data = fileSystem.read(srcFilePath);
+		const absTmpFilePath = joinPath(absTmpDirPath, base);
+		const data = fileSystem.read(absFilePath);
 		if (typeof data === "string") {
-			fileSystem.write(tmpFilePath, await transform(data));
+			fileSystem.write(absTmpFilePath, await transform(data));
 		} else {
-			fileSystem.write(tmpFilePath, data);
+			fileSystem.write(absTmpFilePath, data);
 		}
 	}
 
-	fileSystem.watch(srcDirPath, {
-		onUpdate: (path: string) => {
-			addToDepTree(srcDirPath, path);
-			bubbleUp(path, transformFile);
+	fileSystem.watch(absSrcDirPath, {
+		onRemove: removeFromDepTree,
+		onUpdate: (absPath: string) => {
+			addToDepTree(absSrcDirPath, absPath);
+			bubbleUp(absPath, transformFile);
 		},
-		onRemove: (path: string) => {
-			delete depTree[path];
-			for (const childPath in depTree)
-				depTree[childPath]?.delete(path);
-		}
 	});
 }
