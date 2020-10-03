@@ -23,14 +23,14 @@ export const pack = ({
 	defaultTransformer = noopTransformer,
 	fileSystem,
 }: PackParams) => {
-	const depTree: Dictionary<Dictionary<boolean>> = {};
+	const depTree: Dictionary<Set<String>> = {};
 
 	const addToDepTree = (rootPath: string, parentPath: string) => {
 		getDeps(rootPath, parentPath)
 			.filter(childPath => childPath !== parentPath)
 			.forEach(childPath => {
-				const childDeps = depTree[childPath] ?? {};
-				childDeps[parentPath] = true;
+				const childDeps = depTree[childPath] ?? new Set();
+				childDeps.add(parentPath);
 				depTree[childPath] = childDeps;
 			});
 	}
@@ -80,10 +80,8 @@ export const pack = ({
 		},
 		onRemove: (path: string) => {
 			delete depTree[path];
-			for (const childPath in depTree) {
-				const parentPaths = depTree[childPath] ?? {};
-				parentPaths[path] = false;
-			}
+			for (const childPath in depTree)
+				depTree[childPath]?.delete(path);
 		}
 	});
 }
