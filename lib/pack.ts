@@ -1,7 +1,7 @@
 import { Dictionary, FileSystem, Parser, Transformer } from "./types";
 import { parse as parsePath, join as joinPath, resolve as resolvePath } from "path";
 
-interface PackParams {
+interface TransformSourcesParams {
 	srcDirPath: string;
 	tmpDirPath: string;
 	parsers: Dictionary<Parser>;
@@ -21,7 +21,7 @@ export const transformSources = ({
 	transformers,
 	defaultTransformer = noopTransformer,
 	fileSystem,
-}: PackParams) => {
+}: TransformSourcesParams) => {
 	const absSrcDirPath = resolvePath(srcDirPath);
 	const absTmpDirPath = resolvePath(tmpDirPath);
 	const depsByAbsChildPath: Dictionary<Set<String>> = {};
