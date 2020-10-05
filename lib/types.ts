@@ -6,6 +6,7 @@ export interface FileSystem {
 	read: (path: string) => FileData;
 	write: (path: string, data: FileData) => void;
 	watch: (dirPath: string, params: WatchFilesParams) => void;
+	list: (dirPath: string) => string[];
 }
 
 interface WatchFilesParams {
@@ -26,5 +27,7 @@ export interface ParseResult {
 }
 
 export interface Dependency {
-	sources: string[];
+	refsInParent: string[];
 }
+
+export type DepTree = Dictionary<Dictionary<Dependency>>;

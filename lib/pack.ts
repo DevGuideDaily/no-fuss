@@ -1,5 +1,6 @@
-import { Dictionary, FileSystem, Parser, Transformer } from "./types";
+import { DepTree, Dictionary, FileSystem, Parser, Transformer } from "./types";
 import { parse as parsePath, join as joinPath, resolve as resolvePath } from "path";
+import { addToDepTree, removeFromDepTree } from "./dep-tree";
 
 interface TransformSourcesParams {
 	srcDirPath: string;
@@ -24,34 +25,40 @@ export const transformSources = ({
 }: TransformSourcesParams) => {
 	const absSrcDirPath = resolvePath(srcDirPath);
 	const absTmpDirPath = resolvePath(tmpDirPath);
-	const depsByAbsChildPath: Dictionary<Set<String>> = {};
+	const depTree: DepTree = {};
 
-	const addToDepTree = (rootPath: string, absParentPath: string) => {
-		getAbsDepChildPaths(rootPath, absParentPath)
-			.filter(absChildPath => absChildPath !== absParentPath)
-			.forEach(absChildPath => {
-				const childDeps = depsByAbsChildPath[absChildPath] ?? new Set();
-				childDeps.add(absParentPath);
-				depsByAbsChildPath[absChildPath] = childDeps;
-			});
-	}
+	const addToTree = (absParentPath: string) =>
+		addToDepTree({
+			rootPath: srcDirPath,
+			absParentPath,
+			depTree,
+			parsers,
+			fileSystem,
+		});
 
-	const removeFromDepTree = (path: string) => {
-		delete depsByAbsChildPath[path];
-		for (const childPath in depsByAbsChildPath)
-			depsByAbsChildPath[childPath]?.delete(path);
-	}
+	fileSystem.list(absSrcDirPath).forEach(absFilePath => {
+		addToTree(absFilePath);
+		transformFile(absFilePath);
+	});
 
-	const getAbsDepChildPaths = (rootPath: string, filePath: string) => {
-		const { ext } = parsePath(filePath);
-		const parser = parsers[ext];
-		if (!parser) return [];
-		const data = fileSystem.read(filePath);
+	fileSystem.watch(absSrcDirPath, {
+		onRemove: absPath => removeFromDepTree(absPath, depTree),
+		onUpdate: absPath => {
+			addToTree(absPath);
+			bubbleUp(absPath, transformFile);
+		},
+	});
+
+	const transformFile = async (absFilePath: string) => {
+		const { base, ext } = parsePath(absFilePath);
+		const absTmpFilePath = joinPath(absTmpDirPath, base);
+		const { transform } = transformers[ext] ?? defaultTransformer;
+		const data = fileSystem.read(absFilePath);
 		if (typeof data === "string") {
-			const { depsByAbsChildPath } = parser.parse(rootPath, filePath, data);
-			return Object.keys(depsByAbsChildPath);
+			const transformed = await transform(data);
+			transformed && fileSystem.write(absTmpFilePath, transformed);
 		} else {
-			return [];
+			fileSystem.write(absTmpFilePath, data);
 		}
 	}
 
@@ -64,29 +71,8 @@ export const transformSources = ({
 	}
 
 	const getAbsParentPaths = (absChildPath: string) => {
-		return Object.entries(depsByAbsChildPath[absChildPath] ?? {})
+		return Object.entries(depTree[absChildPath] ?? {})
 			.filter(entry => !!entry[1])
 			.map(entry => entry[0]);;
 	}
-
-	const transformFile = async (absFilePath: string) => {
-		const { base, ext } = parsePath(absFilePath);
-		const absTmpFilePath = joinPath(absTmpDirPath, base);
-		const { transform } = transformers[ext] ?? defaultTransformer;
-		const data = fileSystem.read(absFilePath);
-		if (typeof data === "string") {
-			fileSystem.write(absTmpFilePath, await transform(data));
-		} else {
-			fileSystem.write(absTmpFilePath, data);
-		}
-	}
-
-	fileSystem.watch(absSrcDirPath, {
-		onRemove: removeFromDepTree,
-		onUpdate: (absPath: string) => {
-			addToDepTree(absSrcDirPath, absPath);
-			bubbleUp(absPath, transformFile);
-		},
-	});
 }
-
