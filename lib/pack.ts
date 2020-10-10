@@ -119,9 +119,8 @@ export const pack = ({
 	}
 
 	const cleanUpOutFile = (absSrcFilePath: string) => {
-		if (outFilePathsMap[absSrcFilePath]) {
-			fileSystem.remove(absSrcFilePath);
-		}
+		const absOutFilePath = outFilePathsMap[absSrcFilePath];
+		absOutFilePath && fileSystem.remove(absOutFilePath);
 	}
 
 	fileSystem.watch(srcDirPath, {
