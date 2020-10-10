@@ -1,20 +1,23 @@
-import { transformSources } from "./pack";
-import { readFileSync, outputFileSync } from "fs-extra";
+import { readFileSync, outputFileSync, removeSync } from "fs-extra";
 import glob from "glob";
-import { join, resolve } from "path";
+import { pack } from "./pack";
+import { resolve as resolvePath, join as joinPath } from "path";
+import { lstatSync } from "fs-extra";
 
-transformSources({
+pack({
 	srcDirPath: "test/src",
-	tmpDirPath: "test/tmp",
+	outDirPath: "test/dist",
 	parsers: {},
 	transformers: {},
 	fileSystem: {
-		list: dirPath => {
-			const paths = glob.sync(join(dirPath, "**", "*"));
-			return paths.map(path => resolve(path));
-		},
 		read: path => readFileSync(path, { encoding: "utf8" }),
 		write: (path, data) => outputFileSync(path, data),
-		watch: _ => { }
+		remove: path => removeSync(path),
+		watch: (dirPath, { onUpdate }) => {
+			glob.sync(joinPath(dirPath, "**", "*"))
+				.filter(path => lstatSync(path).isFile())
+				.map(path => resolvePath(path))
+				.forEach(onUpdate)
+		}
 	}
 });

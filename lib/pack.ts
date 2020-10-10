@@ -1,78 +1,134 @@
-import { DepTree, Dictionary, FileSystem, Parser, Transformer } from "./types";
-import { parse as parsePath, join as joinPath, resolve as resolvePath } from "path";
-import { addToDepTree, removeFromDepTree } from "./dep-tree";
+import { fingerPrintFile } from "./finger-print";
+import { Dictionary, FileData, FileSystem, ParsedFile, ParsedFilePart, Parser, Transformer } from "./types";
+import { resolve as resolvePath, parse as parsePath, relative as getRelatvePath, relative } from "path";
 
-interface TransformSourcesParams {
+interface PackParams {
 	srcDirPath: string;
-	tmpDirPath: string;
+	outDirPath: string;
 	parsers: Dictionary<Parser>;
 	transformers: Dictionary<Transformer>;
-	defaultTransformer?: Transformer;
 	fileSystem: FileSystem;
 }
 
-const noopTransformer: Transformer = {
-	transform: source => source
+const defaultTransformer: Transformer = {
+	transform: data => data,
+	getNewExt: oldExt => oldExt
 };
 
-export const transformSources = ({
+const defaultParser: Parser = {
+	parse: (_absSrcDirPath, _absFilePath, data) => ({ parts: [data] })
+}
+
+export const pack = ({
 	srcDirPath,
-	tmpDirPath,
+	outDirPath,
 	parsers,
 	transformers,
-	defaultTransformer = noopTransformer,
-	fileSystem,
-}: TransformSourcesParams) => {
+	fileSystem
+}: PackParams) => {
 	const absSrcDirPath = resolvePath(srcDirPath);
-	const absTmpDirPath = resolvePath(tmpDirPath);
-	const depTree: DepTree = {};
+	const absOutDirPath = resolvePath(outDirPath);
+	const outFilePathsMap: Dictionary<string> = {};
+	const parsedFilesMap: Dictionary<ParsedFile> = {};
 
-	const addToTree = (absParentPath: string) =>
-		addToDepTree({
-			rootPath: srcDirPath,
-			absParentPath,
-			depTree,
-			parsers,
-			fileSystem,
-		});
-
-	fileSystem.list(absSrcDirPath).forEach(absFilePath => {
-		addToTree(absFilePath);
-		transformFile(absFilePath);
-	});
-
-	fileSystem.watch(absSrcDirPath, {
-		onRemove: absPath => removeFromDepTree(absPath, depTree),
-		onUpdate: absPath => {
-			addToTree(absPath);
-			bubbleUp(absPath, transformFile);
-		},
-	});
-
-	const transformFile = async (absFilePath: string) => {
-		const { base, ext } = parsePath(absFilePath);
-		const absTmpFilePath = joinPath(absTmpDirPath, base);
-		const { transform } = transformers[ext] ?? defaultTransformer;
-		const data = fileSystem.read(absFilePath);
-		if (typeof data === "string") {
-			const transformed = await transform(data);
-			transformed && fileSystem.write(absTmpFilePath, transformed);
+	const processSrcFile = async (absSrcFilePath: string) => {
+		const fileData = fileSystem.read(absSrcFilePath);
+		const { ext } = parsePath(absSrcFilePath);
+		if (typeof fileData === "string") {
+			await transformAndParseFile(absSrcFilePath, fileData);
+			generateOutputAndBubbleUp(absSrcFilePath);
 		} else {
-			fileSystem.write(absTmpFilePath, data);
+			cleanUpAndFingerPrintFile(absSrcFilePath, ext, fileData);
 		}
 	}
 
-	const bubbleUp = async (absChildPath: string, processFile: (path: string) => Promise<void>) => {
-		await processFile(absChildPath);
-		const parentPaths = getAbsParentPaths(absChildPath);
-		for (const parentPath of parentPaths) {
-			await bubbleUp(parentPath, processFile);
+	const generateOutputAndBubbleUp = (absSrcChildPath: string) => {
+		const isGenerated = generateOutputFile(absSrcChildPath);
+		if (!isGenerated) return;
+		for (const absSrcParentPath in parsedFilesMap) {
+			const parsedFile = parsedFilesMap[absSrcParentPath];
+			if (!parsedFile || absSrcChildPath === absSrcParentPath) continue;
+			if (shouldGenerateOutput(parsedFile, absSrcChildPath))
+				generateOutputAndBubbleUp(absSrcParentPath);
 		}
 	}
 
-	const getAbsParentPaths = (absChildPath: string) => {
-		return Object.entries(depTree[absChildPath] ?? {})
-			.filter(entry => !!entry[1])
-			.map(entry => entry[0]);;
+	const shouldGenerateOutput = (parsedFile: ParsedFile, absSrcChildPath: string) => {
+		return parsedFile.parts.some(part =>
+			typeof part !== "string" && part.absFilePath === absSrcChildPath);
 	}
+
+	const transformAndParseFile = async (absSrcFilePath: string, data: string) => {
+		const { ext } = parsePath(absSrcFilePath);
+		const { transform, getNewExt } = transformers[ext] ?? defaultTransformer;
+		const transformedData = await transform(data);
+		const { parse } = parsers[getNewExt(ext)] ?? defaultParser;
+		parsedFilesMap[absSrcFilePath] =
+			parse(absSrcDirPath, absSrcFilePath, transformedData);
+	}
+
+	const generateOutputFile = (absSrcFilePath: string) => {
+		const parsedFile = parsedFilesMap[absSrcFilePath];
+		if (!parsedFile) return false;
+
+		const outputData = generateOutputData(parsedFile);
+		if (!outputData) return false;
+
+		const { ext } = parsePath(absSrcFilePath);
+		const { getNewExt } = transformers[ext] ?? defaultTransformer;
+		cleanUpAndFingerPrintFile(absSrcFilePath, getNewExt(ext), outputData);
+
+		return true;
+	}
+
+	const generateOutputData = (parsedFile: ParsedFile) => {
+		let outputData = "";
+		for (let i = 0; i < parsedFile.parts.length; i++) {
+			const partValue = getPartValue(parsedFile.parts[i]);
+			if (!partValue) return;
+			outputData += partValue;
+		}
+		return outputData;
+	}
+
+	const getPartValue = (part: ParsedFilePart) => {
+		if (typeof part === "string") {
+			return part;
+		} else {
+			const absOutFilePath = outFilePathsMap[part.absFilePath];
+			if (!absOutFilePath) return;
+			return getOutFileUrl(absOutFilePath);
+		}
+	}
+
+	const getOutFileUrl = (absOutFilePath: string) => {
+		const relativePath = getRelatvePath(absOutDirPath, absOutFilePath);
+		return `/${relativePath}`;
+	}
+
+	const cleanUpAndFingerPrintFile = (absSrcFilePath: string, outExt: string, fileData: FileData) => {
+		cleanUpOutFile(absSrcFilePath);
+		outFilePathsMap[absSrcFilePath] = fingerPrintFile({
+			fileData,
+			absSrcDirPath,
+			absSrcFilePath,
+			outExt,
+			absOutDirPath,
+			fileSystem
+		});
+	}
+
+	const cleanUpOutFile = (absSrcFilePath: string) => {
+		if (outFilePathsMap[absSrcFilePath]) {
+			fileSystem.remove(absSrcFilePath);
+		}
+	}
+
+	fileSystem.watch(srcDirPath, {
+		onUpdate: processSrcFile,
+		onRemove: absSrcFilePath => {
+			delete parsedFilesMap[absSrcFilePath];
+			cleanUpOutFile(absSrcFilePath);
+		}
+	});
 }

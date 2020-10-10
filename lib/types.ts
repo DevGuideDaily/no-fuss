@@ -1,12 +1,12 @@
 export type Dictionary<T> = Record<string, T | undefined> & Object;
 
-type FileData = string | ArrayBuffer;
+export type FileData = string | ArrayBuffer;
 
 export interface FileSystem {
 	read: (path: string) => FileData;
 	write: (path: string, data: FileData) => void;
+	remove: (path: string) => void;
 	watch: (dirPath: string, params: WatchFilesParams) => void;
-	list: (dirPath: string) => string[];
 }
 
 interface WatchFilesParams {
@@ -16,18 +16,17 @@ interface WatchFilesParams {
 
 export interface Transformer {
 	transform: (data: string) => Promise<string> | string;
+	getNewExt: (oldExt: string) => string;
 }
 
 export interface Parser {
-	parse: (rootPath: string, filePath: string, data: string) => ParseResult;
+	parse: (absSrcDirPath: string, absFilePath: string, data: string) => ParsedFile;
 }
 
-export interface ParseResult {
-	depsByAbsChildPath: Dictionary<Dependency>;
+export interface ParsedFile {
+	parts: ParsedFilePart[];
 }
 
-export interface Dependency {
-	refsInParent: string[];
+export type ParsedFilePart = string | {
+	absFilePath: string;
 }
-
-export type DepTree = Dictionary<Dictionary<Dependency>>;
