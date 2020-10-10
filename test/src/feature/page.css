@@ -1,0 +1,4 @@
+body {
+	background-image: url(/assets/image.svg);
+	background-image: url(../assets/image.svg);
+}
