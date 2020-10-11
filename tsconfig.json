@@ -1,6 +1,7 @@
 {
 	"compilerOptions": {
 		"strict": true,
+		"allowJs": true,
 		"esModuleInterop": true,
 		"declaration": true,
 		"target": "ES2017",
