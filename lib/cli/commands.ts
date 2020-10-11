@@ -41,15 +41,14 @@ export const runBuild = (passedOptions: Options) => {
 }
 
 interface ServeOptions extends Options {
-	port?: number;
+	port?: string;
 }
 
 
 const resolveServeOptions = (options: ServeOptions): Required<ServeOptions> => {
-	const defaultPort = 5000;
 	return {
 		...resolveOptions(options),
-		port: options.port ?? defaultPort
+		port: options.port ?? "5000"
 	};
 }
 
