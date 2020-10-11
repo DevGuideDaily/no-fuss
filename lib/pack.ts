@@ -129,6 +129,7 @@ export const pack = ({
 	const cleanUpOutFile = (absSrcFilePath: string) => {
 		const absOutFilePath = outFilePathsMap[absSrcFilePath];
 		absOutFilePath && fileSystem.remove(absOutFilePath);
+		delete outFilePathsMap[absSrcFilePath];
 	}
 
 	fileSystem.watch(srcDirPath, {
@@ -136,6 +137,7 @@ export const pack = ({
 		onRemove: absSrcFilePath => {
 			delete parsedFilesMap[absSrcFilePath];
 			cleanUpOutFile(absSrcFilePath);
+			bubbleUp(absSrcFilePath);
 		}
 	});
 }
