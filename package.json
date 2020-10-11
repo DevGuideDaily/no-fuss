@@ -2,7 +2,11 @@
 	"name": "no-fuss",
 	"version": "0.0.1",
 	"description": "A simple and fast static website generator with no fuss",
-	"author": "Marko Pavlovic - @DevGuideDaily",
+	"repository": {
+		"type": "git",
+		"url": "https://github.com/DevGuideDaily/no-fuss.git"
+	},
+	"author": "Marko Pavlovic",
 	"license": "MIT",
 	"main": "bin/pack.js",
 	"bin": {
