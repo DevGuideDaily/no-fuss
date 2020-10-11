@@ -1,0 +1,9 @@
+lib
+docs
+.editorconfig
+.gitignore
+yarn.lock
+.vscode
+cli-test
+tsconfig.json
+*.js.map
