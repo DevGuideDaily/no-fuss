@@ -19,24 +19,26 @@ export const pack = ({
 	const absSrcDirPath = resolvePath(srcDirPath);
 	const absOutDirPath = resolvePath(outDirPath);
 	const outFilePathsMap: Dictionary<string> = {};
-	const parsedFilesMap: Dictionary<ParsedFile> = {};
+	const parsedFilesBeforeTransMap: Dictionary<ParsedFile> = {};
+	const parsedFilesAfterTransMap: Dictionary<ParsedFile> = {};
 
 	const transformersMap: Dictionary<Transformer> = {};
 	for (const transformer of transformers)
 		transformersMap[transformer.srcExt] = transformer;
 
 	const processSrcFile = async (absSrcFilePath: string) => {
+		parsedFilesBeforeTransMap[absSrcFilePath] = parseFile(absSrcFilePath);
 		const transformResult = await transformFile(absSrcFilePath);
-		const parsedFile = parseFile(absSrcFilePath, transformResult);
-		if (parsedFile) {
-			parsedFilesMap[absSrcFilePath] = parsedFile;
+		const parsedFileAfterTrans = parseFile(absSrcFilePath, transformResult);
+		if (parsedFileAfterTrans) {
+			parsedFilesAfterTransMap[absSrcFilePath] = parsedFileAfterTrans;
 			generateParsedFileOutput(absSrcFilePath);
 		} else {
 			const { ext } = parsePath(absSrcFilePath);
 			const data = fileSystem.read(absSrcFilePath);
 			cleanUpAndFingerPrintFile(absSrcFilePath, ext, data);
 		}
-		bubbleUp(absSrcFilePath);
+		await bubbleUp(absSrcFilePath);
 	}
 
 	const transformFile = (absSrcFilePath: string) => {
@@ -66,26 +68,45 @@ export const pack = ({
 		return parse({ absSrcDirPath, absSrcFilePath, data, ext });
 	}
 
-	const bubbleUp = (absSrcChildPath: string, visited = new Set<string>()) => {
+	const bubbleUp = async (absSrcChildPath: string, visited = new Set<string>()) => {
 		visited.add(absSrcChildPath);
-		for (const absSrcParentPath in parsedFilesMap) {
-			const parsedFile = parsedFilesMap[absSrcParentPath];
-			if (!parsedFile || visited.has(absSrcParentPath)) continue;
-			if (shouldGenerateOutput(parsedFile, absSrcChildPath)) {
+
+		for (const absSrcParentPath in parsedFilesBeforeTransMap) {
+			if (visited.has(absSrcParentPath)) continue;
+			const parsedFileBeforeTrans = parsedFilesBeforeTransMap[absSrcParentPath];
+
+			if (hasDependency(parsedFileBeforeTrans, absSrcChildPath)) {
+				const transformResult = await transformFile(absSrcParentPath);
+				const parsedFileAfterTrans = parseFile(absSrcParentPath, transformResult);
+				parsedFilesAfterTransMap[absSrcParentPath] = parsedFileAfterTrans;
+
+				// If the dependency is present even after transforming,
+				// generating output and bubbling up will be called in the second loop
+				if (!hasDependency(parsedFileAfterTrans, absSrcChildPath)) {
+					generateParsedFileOutput(absSrcParentPath);
+					bubbleUp(absSrcParentPath, visited);
+				}
+			}
+		}
+
+		for (const absSrcParentPath in parsedFilesAfterTransMap) {
+			if (visited.has(absSrcParentPath)) continue;
+			const parsedFileAfterTrans = parsedFilesAfterTransMap[absSrcParentPath];
+			if (hasDependency(parsedFileAfterTrans, absSrcChildPath)) {
 				generateParsedFileOutput(absSrcParentPath);
 				bubbleUp(absSrcParentPath, visited);
 			}
 		}
 	}
 
-	const shouldGenerateOutput = (parsedFile: ParsedFile, absSrcChildPath: string) => {
-		return parsedFile.parts.some(part =>
+	const hasDependency = (parsedFile: ParsedFile | undefined, absSrcChildPath: string) => {
+		return !!parsedFile && parsedFile.parts.some(part =>
 			typeof part !== "string" &&
 			part.absFilePath === absSrcChildPath);
 	}
 
 	const generateParsedFileOutput = (absSrcFilePath: string) => {
-		const parsedFile = parsedFilesMap[absSrcFilePath];
+		const parsedFile = parsedFilesAfterTransMap[absSrcFilePath];
 		if (!parsedFile) return false;
 
 		const outputData = generateOutputData(parsedFile);
@@ -135,7 +156,8 @@ export const pack = ({
 	fileSystem.watch(srcDirPath, {
 		onUpdate: processSrcFile,
 		onRemove: absSrcFilePath => {
-			delete parsedFilesMap[absSrcFilePath];
+			delete parsedFilesBeforeTransMap[absSrcFilePath];
+			delete parsedFilesAfterTransMap[absSrcFilePath];
 			cleanUpOutFile(absSrcFilePath);
 			bubbleUp(absSrcFilePath);
 		}
