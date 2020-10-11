@@ -66,25 +66,15 @@ export const pack = ({
 		return parse({ absSrcDirPath, absSrcFilePath, data, ext });
 	}
 
-	const bubbleUp = (absSrcChildPath: string) => {
+	const bubbleUp = (absSrcChildPath: string, visited = new Set<string>()) => {
+		visited.add(absSrcChildPath);
 		for (const absSrcParentPath in parsedFilesMap) {
 			const parsedFile = parsedFilesMap[absSrcParentPath];
-			if (!parsedFile || absSrcChildPath === absSrcParentPath) continue;
+			if (!parsedFile || visited.has(absSrcParentPath)) continue;
 			if (shouldGenerateOutput(parsedFile, absSrcChildPath)) {
 				generateParsedFileOutput(absSrcParentPath);
-				bubbleUp(absSrcParentPath);
+				bubbleUp(absSrcParentPath, visited);
 			}
-		}
-	}
-
-	const generateOutputAndBubbleUp = (absSrcChildPath: string) => {
-		const isGenerated = generateParsedFileOutput(absSrcChildPath);
-		if (!isGenerated) return;
-		for (const absSrcParentPath in parsedFilesMap) {
-			const parsedFile = parsedFilesMap[absSrcParentPath];
-			if (!parsedFile || absSrcChildPath === absSrcParentPath) continue;
-			if (shouldGenerateOutput(parsedFile, absSrcChildPath))
-				generateOutputAndBubbleUp(absSrcParentPath);
 		}
 	}
 
