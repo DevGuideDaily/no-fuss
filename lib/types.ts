@@ -6,7 +6,6 @@ export type FileData = string | Buffer;
 
 export interface FileSystem {
 	read: typeof readFileSync;
-	list: (dirPath: string) => string[];
 	write: (path: string, data: FileData) => void;
 	remove: (path: string) => void;
 	watch: (dirPath: string, params: WatchFilesParams) => void;

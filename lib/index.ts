@@ -11,14 +11,14 @@ pack({
 	outDirPath: "test/dist",
 	transformers: [pugTransformer, lessTransformer],
 	fileSystem: {
-		list: dirPath => {
-			return glob.sync(joinPath(dirPath, "**", "*"))
-				.filter(path => lstatSync(path).isFile())
-				.map(path => resolvePath(path))
-		},
 		read: readFileSync,
 		write: (path, data) => outputFileSync(path, data),
 		remove: path => removeSync(path),
-		watch: () => { }
+		watch: (dirPath, { onUpdate }) => {
+			return glob.sync(joinPath(dirPath, "**", "*"))
+				.filter(path => lstatSync(path).isFile())
+				.map(path => resolvePath(path))
+				.forEach(onUpdate);
+		}
 	}
 });

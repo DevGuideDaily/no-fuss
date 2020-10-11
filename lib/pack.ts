@@ -141,9 +141,6 @@ export const pack = ({
 		absOutFilePath && fileSystem.remove(absOutFilePath);
 	}
 
-	fileSystem.list(absSrcDirPath)
-		.forEach(processSrcFile);
-
 	fileSystem.watch(srcDirPath, {
 		onUpdate: processSrcFile,
 		onRemove: absSrcFilePath => {
