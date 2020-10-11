@@ -1,7 +1,7 @@
 import { join as joinPath, parse as parsePath } from "path";
 import { ParsedFile, ParsedFilePart } from "./types";
 
-const filePathRegex = /([\/\.\w-_]+\.\w+)/
+const filePathRegex = /([\/\.\w-_]+\.[a-z]+)/
 const parsableExt = [".html", ".css"];
 
 export const canParse = (ext: string) =>
