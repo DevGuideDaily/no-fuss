@@ -35,7 +35,7 @@ export const pack = ({
 			generateParsedFileOutput(absSrcFilePath);
 		} else {
 			const { ext } = parsePath(absSrcFilePath);
-			const data = fileSystem.read(absSrcFilePath);
+			const data = fileSystem.readBinary(absSrcFilePath);
 			cleanUpAndFingerPrintFile(absSrcFilePath, ext, data);
 		}
 		await bubbleUp(absSrcFilePath);
@@ -44,7 +44,7 @@ export const pack = ({
 	const transformFile = (absSrcFilePath: string) => {
 		const { ext } = parsePath(absSrcFilePath);
 		const transformer = transformersMap[ext];
-		const data = fileSystem.read(absSrcFilePath, { encoding: "utf-8" });
+		const data = fileSystem.readText(absSrcFilePath);
 		return transformer && transformer.transform(absSrcFilePath, data);
 	}
 
@@ -64,7 +64,7 @@ export const pack = ({
 	const parseSrcFile = (absSrcFilePath: string) => {
 		const { ext } = parsePath(absSrcFilePath);
 		if (!canParse(ext)) return;
-		const data = fileSystem.read(absSrcFilePath, { encoding: "utf-8" });
+		const data = fileSystem.readText(absSrcFilePath);
 		return parse({ absSrcDirPath, absSrcFilePath, data, ext });
 	}
 
