@@ -18,10 +18,15 @@ An important goal of the project is to be well documented and easy to follow for
 
 # Usage
 
-| Step         | Yarn                             | NPM                            |
-| ------------ | -------------------------------- | ------------------------------ |
-| 1. Install   | `yarn add -D no-fuss`            | `npm i -D no-fuss`             |
-| 2. Run       | `yarn fuss [command] [options]`  | `npx fuss [command] [options]` |
+```bash
+# Yarn
+yarn add -D no-fuss
+yarn fuss [command] [options]
+
+# NPM
+npm i -D no-fuss
+npx fuss [command] [options]
+```
 
 ## Commands
 
