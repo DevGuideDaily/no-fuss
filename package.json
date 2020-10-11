@@ -1,6 +1,6 @@
 {
 	"name": "no-fuss",
-	"version": "0.0.6",
+	"version": "0.0.7",
 	"description": "A simple and fast static website generator with no fuss",
 	"repository": {
 		"type": "git",
