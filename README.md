@@ -36,11 +36,11 @@ npx fuss [command] [options]
 
 ## Options
 
-| Option          | Meaning                              |
-| --------------- | ------------------------------------ |
-| `-s, --src-dir` | Source directory (default: `./src`)  |
-| `-o, --out-dir` | Output directory (default: `./dist`) |
-| `-p, --port`    | Port (only used with `serve`)        |
+| Option          | Meaning                                |
+| --------------- | -------------------------------------- |
+| `-s, --src-dir` | Source directory (default is `./src`)  |
+| `-o, --out-dir` | Output directory (default is `./dist`) |
+| `-p, --port`    | Port (only used with `serve`)          |
 
 ---
 
