@@ -18,8 +18,12 @@ An important goal of the project is to be well documented and easy to follow for
 
 # Usage
 
-1. Install `npm i --D no-fuss` or `yarn add -D no-fuss`
-1. Run `npx fuss` or `yarn fuss`
+1. **Install**
+	- `npm i -D no-fuss`
+	- `yarn add -D no-fuss`
+1. **Run**
+	- `npx fuss`
+	- `yarn fuss`
 
 ## Commands
 
@@ -29,11 +33,13 @@ An important goal of the project is to be well documented and easy to follow for
 
 ## Options
 
-- `-s, --src-dir` - Source directory
-- `-o, --out-dir` - Output directory
-- `-p, --port` - Port (only used with `serve`)
+| Option          | Meaning                       |
+| --------------- | ----------------------------- |
+| `-s, --src-dir` | Source directory              |
+| `-o, --out-dir` | Output directory              |
+| `-p, --port`    | Port (only used with `serve`) |
 
-
+---
 
 ## License
 
