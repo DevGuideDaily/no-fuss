@@ -1,3 +1,5 @@
+#!/usr/bin/env node
+
 import commander from "commander";
 import { runBuild, runServe, runWatch } from "./cli/commands";
 
