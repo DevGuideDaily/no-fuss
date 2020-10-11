@@ -22,8 +22,8 @@ An important goal of the project is to be well documented and easy to follow for
 	- `npm i -D no-fuss`
 	- `yarn add -D no-fuss`
 1. **Run**
-	- `npx fuss`
-	- `yarn fuss`
+	- `npx fuss [command] [options]`
+	- `yarn fuss [command] [options]`
 
 ## Commands
 
