@@ -33,6 +33,6 @@ export const hashFileData = (fileData: FileData) => {
 	if (typeof fileData === "string") {
 		return hash.update(fileData).digest("hex");
 	} else {
-		return hash.update(new DataView(fileData)).digest("hex");
+		return hash.update(new DataView(fileData.buffer)).digest("hex");
 	}
 }

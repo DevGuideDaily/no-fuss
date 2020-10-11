@@ -1,28 +1,18 @@
 import { fingerPrintFile } from "./finger-print";
-import { Dictionary, FileData, FileSystem, ParsedFile, ParsedFilePart, Parser, Transformer } from "./types";
-import { resolve as resolvePath, parse as parsePath, relative as getRelatvePath, relative } from "path";
+import { Dictionary, FileData, FileSystem, ParsedFile, ParsedFilePart, Transformer, TransformResult } from "./types";
+import { resolve as resolvePath, parse as parsePath, relative as getRelatvePath } from "path";
+import { canParse, parse } from "./parse";
 
 interface PackParams {
 	srcDirPath: string;
 	outDirPath: string;
-	parsers: Dictionary<Parser>;
-	transformers: Dictionary<Transformer>;
+	transformers: Transformer[];
 	fileSystem: FileSystem;
-}
-
-const defaultTransformer: Transformer = {
-	transform: data => data,
-	getNewExt: oldExt => oldExt
-};
-
-const defaultParser: Parser = {
-	parse: (_absSrcDirPath, _absFilePath, data) => ({ parts: [data] })
 }
 
 export const pack = ({
 	srcDirPath,
 	outDirPath,
-	parsers,
 	transformers,
 	fileSystem
 }: PackParams) => {
@@ -31,19 +21,64 @@ export const pack = ({
 	const outFilePathsMap: Dictionary<string> = {};
 	const parsedFilesMap: Dictionary<ParsedFile> = {};
 
+	const transformersMap: Dictionary<Transformer> = {};
+	for (const transformer of transformers)
+		transformersMap[transformer.srcExt] = transformer;
+
 	const processSrcFile = async (absSrcFilePath: string) => {
-		const fileData = fileSystem.read(absSrcFilePath);
-		const { ext } = parsePath(absSrcFilePath);
-		if (typeof fileData === "string") {
-			await transformAndParseFile(absSrcFilePath, fileData);
-			generateOutputAndBubbleUp(absSrcFilePath);
+		const transformResult = await transformFile(absSrcFilePath);
+		const parsedFile = parseFile(absSrcFilePath, transformResult);
+		if (parsedFile) {
+			parsedFilesMap[absSrcFilePath] = parsedFile;
+			generateParsedFileOutput(absSrcFilePath);
 		} else {
-			cleanUpAndFingerPrintFile(absSrcFilePath, ext, fileData);
+			const { ext } = parsePath(absSrcFilePath);
+			const data = fileSystem.read(absSrcFilePath);
+			cleanUpAndFingerPrintFile(absSrcFilePath, ext, data);
+		}
+		bubbleUp(absSrcFilePath);
+	}
+
+	const transformFile = (absSrcFilePath: string) => {
+		const { ext } = parsePath(absSrcFilePath);
+		const transformer = transformersMap[ext];
+		const data = fileSystem.read(absSrcFilePath, { encoding: "utf-8" });
+		return transformer && transformer.transform(absSrcFilePath, data);
+	}
+
+	const parseFile = (absSrcFilePath: string, transformResult?: TransformResult) => {
+		if (transformResult) {
+			return parseTransformResult(absSrcFilePath, transformResult);
+		} else {
+			return parseSrcFile(absSrcFilePath);
+		}
+	}
+
+	const parseTransformResult = (absSrcFilePath: string, { ext, data }: TransformResult) => {
+		if (!canParse(ext)) return;
+		return parse({ absSrcDirPath, absSrcFilePath, data, ext })
+	}
+
+	const parseSrcFile = (absSrcFilePath: string) => {
+		const { ext } = parsePath(absSrcFilePath);
+		if (!canParse(ext)) return;
+		const data = fileSystem.read(absSrcFilePath, { encoding: "utf-8" });
+		return parse({ absSrcDirPath, absSrcFilePath, data, ext });
+	}
+
+	const bubbleUp = (absSrcChildPath: string) => {
+		for (const absSrcParentPath in parsedFilesMap) {
+			const parsedFile = parsedFilesMap[absSrcParentPath];
+			if (!parsedFile || absSrcChildPath === absSrcParentPath) continue;
+			if (shouldGenerateOutput(parsedFile, absSrcChildPath)) {
+				generateParsedFileOutput(absSrcParentPath);
+				bubbleUp(absSrcParentPath);
+			}
 		}
 	}
 
 	const generateOutputAndBubbleUp = (absSrcChildPath: string) => {
-		const isGenerated = generateOutputFile(absSrcChildPath);
+		const isGenerated = generateParsedFileOutput(absSrcChildPath);
 		if (!isGenerated) return;
 		for (const absSrcParentPath in parsedFilesMap) {
 			const parsedFile = parsedFilesMap[absSrcParentPath];
@@ -55,40 +90,22 @@ export const pack = ({
 
 	const shouldGenerateOutput = (parsedFile: ParsedFile, absSrcChildPath: string) => {
 		return parsedFile.parts.some(part =>
-			typeof part !== "string" && part.absFilePath === absSrcChildPath);
+			typeof part !== "string" &&
+			part.absFilePath === absSrcChildPath);
 	}
 
-	const transformAndParseFile = async (absSrcFilePath: string, data: string) => {
-		const { ext } = parsePath(absSrcFilePath);
-		const { transform, getNewExt } = transformers[ext] ?? defaultTransformer;
-		const transformedData = await transform(data);
-		const { parse } = parsers[getNewExt(ext)] ?? defaultParser;
-		parsedFilesMap[absSrcFilePath] =
-			parse(absSrcDirPath, absSrcFilePath, transformedData);
-	}
-
-	const generateOutputFile = (absSrcFilePath: string) => {
+	const generateParsedFileOutput = (absSrcFilePath: string) => {
 		const parsedFile = parsedFilesMap[absSrcFilePath];
 		if (!parsedFile) return false;
 
 		const outputData = generateOutputData(parsedFile);
-		if (!outputData) return false;
-
-		const { ext } = parsePath(absSrcFilePath);
-		const { getNewExt } = transformers[ext] ?? defaultTransformer;
-		cleanUpAndFingerPrintFile(absSrcFilePath, getNewExt(ext), outputData);
+		cleanUpAndFingerPrintFile(absSrcFilePath, parsedFile.ext, outputData);
 
 		return true;
 	}
 
-	const generateOutputData = (parsedFile: ParsedFile) => {
-		let outputData = "";
-		for (let i = 0; i < parsedFile.parts.length; i++) {
-			const partValue = getPartValue(parsedFile.parts[i]);
-			if (!partValue) return;
-			outputData += partValue;
-		}
-		return outputData;
+	const generateOutputData = ({ parts }: ParsedFile) => {
+		return parts.map(getPartValue).join("");
 	}
 
 	const getPartValue = (part: ParsedFilePart) => {
@@ -96,7 +113,7 @@ export const pack = ({
 			return part;
 		} else {
 			const absOutFilePath = outFilePathsMap[part.absFilePath];
-			if (!absOutFilePath) return;
+			if (!absOutFilePath) return part.originalPath;
 			return getOutFileUrl(absOutFilePath);
 		}
 	}
@@ -122,6 +139,9 @@ export const pack = ({
 		const absOutFilePath = outFilePathsMap[absSrcFilePath];
 		absOutFilePath && fileSystem.remove(absOutFilePath);
 	}
+
+	fileSystem.list(absSrcDirPath)
+		.forEach(processSrcFile);
 
 	fileSystem.watch(srcDirPath, {
 		onUpdate: processSrcFile,

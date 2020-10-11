@@ -1,26 +1,32 @@
 import { join as joinPath, parse as parsePath } from "path";
-import { ParsedFilePart } from "../types";
-import { filePathRegex, urlRegex } from "./constants";
+import { ParsedFile, ParsedFilePart } from "./types";
 
-interface ParseFileParams {
+const filePathRegex = /([\/\.\w-_]+\.\w+)/
+const parsableExt = [".html", ".css"];
+
+export const canParse = (ext: string) =>
+	parsableExt.includes(ext);
+
+interface ParseParams {
 	absSrcDirPath: string;
-	absFilePath: string;
+	absSrcFilePath: string;
 	data: string;
-	splitRegex: RegExp;
+	ext: string;
 }
 
-export const parseFile = ({
+export const parse = ({
 	absSrcDirPath,
-	absFilePath,
+	absSrcFilePath,
 	data,
-	splitRegex
-}: ParseFileParams) => {
-	const strParts = data.split(splitRegex).filter(Boolean);
-	if (strParts.length === 1) return { parts: strParts };
+	ext,
+}: ParseParams): ParsedFile => {
+	const strParts = data.split(filePathRegex).filter(Boolean);
+	if (strParts.length === 1) return { ext, parts: strParts };
 	return {
+		ext,
 		parts: strParts.map(strPart => getParsedPart({
 			absSrcDirPath,
-			absParentPath: absFilePath,
+			absParentPath: absSrcFilePath,
 			strPart
 		}))
 	};
@@ -37,11 +43,14 @@ const getParsedPart = ({
 	absParentPath,
 	strPart,
 }: GetParsedPartParams): ParsedFilePart => {
-	if (urlRegex.test(strPart) || !filePathRegex.test(strPart)) {
-		return strPart;
-	} else {
+	if (filePathRegex.test(strPart)) {
 		const absChildPath = getAbsChildPath(absSrcDirPath, absParentPath, strPart);
-		return { absFilePath: absChildPath };
+		return {
+			originalPath: strPart,
+			absFilePath: absChildPath
+		};
+	} else {
+		return strPart;
 	}
 }
 
