@@ -10,9 +10,11 @@ interface Options {
 	outDir?: string;
 }
 
-const resolveOptions = (options: Options) => {
-	const defaultOptions: Required<Options> = { srcDir: "src", outDir: "dist" };
-	return { ...defaultOptions, ...options }
+const resolveOptions = ({ srcDir, outDir }: Options): Required<Options> => {
+	return {
+		srcDir: srcDir ?? "src",
+		outDir: outDir ?? "dist"
+	}
 }
 
 export const runWatch = (passedOptions: Options) => {
