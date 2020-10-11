@@ -7,11 +7,15 @@
 		{
 			"type": "node",
 			"request": "launch",
-			"name": "Launch Program",
+			"name": "CLI Test - Serve",
 			"skipFiles": [
 				"<node_internals>/**"
 			],
-			"program": "${workspaceFolder}/lib/index.ts",
+			"program": "${workspaceFolder}/lib/cli.ts",
+			"args": [
+				"-scli-test/src",
+				"-ocli-test/dist",
+			],
 			"preLaunchTask": "tsc: build - tsconfig.json",
 			"outFiles": [
 				"${workspaceFolder}/bin/**/*.js"
