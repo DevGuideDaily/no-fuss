@@ -2,18 +2,38 @@
 
 # No Fuss - Static Site Builder
 
-*No Fuss* is a simple static website builder, aiming to provide you with only the features you need, without any bloat. This project is part of the Hacktober 2020 effort to contribute to open-source. Everyone is welcome to join the project.
+*No Fuss* is a simple static website builder, aiming to provide you with only the features you need, without any bloat. This project is part of the *Hacktober 2020* effort to contribute to open-source. Everyone is welcome to join the project.
 
-An important goal of the project is to be well documented and easy to follow for developers who are looking to learn by following the development, or to contribute.
+An important goal of the project is to be well documented and easy to follow for developers who are looking to learn, or to contribute.
 
 ## Feature Goals
 
-- [ ] Transform simple assets like pug templates or less files
-- [ ] Minimal core, pluggable architecture
-- [ ] Fingerprint assets
-- [ ] Live-reload development server
-- [ ] No webpack
-- [ ] No complicated frameworks
+- [x] Transform simple assets like pug templates or less files
+- [x] Fast and light weight - currently the package weighs only **6.3kb**.
+- [x] Minimal core, pluggable architecture
+- [x] Finger print assets
+- [x] Live-reload development server
+- [x] No webpack
+- [x] No complicated frameworks
+
+# Usage
+
+1. Install `npm i --D no-fuss` or `yarn add -D no-fuss`
+1. Run `npx fuss` or `yarn fuss`
+
+## Commands
+
+- `watch` - Watch files and incrementally build
+- `build` - Build files once
+- `serve` - Run the development server with live reload. This is the default command.
+
+## Options
+
+- `-s, --src-dir` - Source directory
+- `-o, --out-dir` - Output directory
+- `-p, --port` - Port (only used with `serve`)
+
+
 
 ## License
 
