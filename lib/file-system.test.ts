@@ -1,21 +1,19 @@
 import { createTestFileSystem } from "./file-system";
 
 describe("TestFileSystem", () => {
-	const textFiles = {
-		"/index.pug": "p Hello World",
-		"/style.less": "body { color: red; }"
-	};
+	const textFiles: Array<[string, string]> = [
+		["/index.pug", "p Hello World"],
+		["/style.less", "body { color: red; }"]
+	]
 
-	const imageBufferA = Buffer.from("Some image data A");
-	const imageBufferB = Buffer.from("Some image data A");
-	const binaryFiles = {
-		"/image-a.png": imageBufferA,
-		"/image-b.png": imageBufferB,
-	};
+	const binaryFiles: Array<[string, string]> = [
+		["/image-a.png", "Some image data A"],
+		["/image-b.png", "Some image data B"]
+	];
 
 	describe("readText", () => {
 		it("returns the correct value and logs", () => {
-			const fs = createTestFileSystem({ textFiles });
+			const fs = createTestFileSystem({ files: textFiles });
 
 			const indexData = fs.readText("/index.pug");
 			expect(indexData).toEqual("p Hello World");
@@ -33,13 +31,13 @@ describe("TestFileSystem", () => {
 
 	describe("readBinary", () => {
 		it("returns the correct value and logs", () => {
-			const fs = createTestFileSystem({ binaryFiles });
+			const fs = createTestFileSystem({ files: binaryFiles });
 
 			const imageDataA = fs.readBinary("/image-a.png");
-			expect(imageDataA).toEqual(imageBufferA);
+			expect(imageDataA).toEqual(Buffer.from("Some image data A"));
 
 			const imageDataB = fs.readBinary("/image-b.png");
-			expect(imageDataB).toEqual(imageBufferB);
+			expect(imageDataB).toEqual(Buffer.from("Some image data B"));
 
 			const log = fs.getLog();
 			expect(log).toEqual([
@@ -51,7 +49,7 @@ describe("TestFileSystem", () => {
 
 	describe("watch", () => {
 		it("calls onUpdate for every path once", () => {
-			const fs = createTestFileSystem({ textFiles, binaryFiles });
+			const fs = createTestFileSystem({ files: [...textFiles, ...binaryFiles] });
 			const paths: string[] = [];
 			fs.watch("", {
 				onUpdate: path => paths.push(path),

@@ -41,31 +41,26 @@ const createBasicFileSystem = (): FileSystem => {
 }
 
 interface CreateTestFileSystemParams {
-	textFiles?: Dictionary<string>;
-	binaryFiles?: Dictionary<Buffer>;
+	files?: Array<[string, string]>
 }
 
-export const createTestFileSystem = ({
-	textFiles = {},
-	binaryFiles = {}
-}: CreateTestFileSystemParams): TestFileSystem => {
+export const createTestFileSystem = ({ files = [] }: CreateTestFileSystemParams): TestFileSystem => {
 	const log: TestFileSystemLogItem[] = [];
+
+	const getFileData = (path: string) =>
+		files.find(pair => pair[0] === path)?.[1];
 
 	return {
 		readText: path => {
 			log.push({ operation: "read", path });
-			return textFiles[path] ?? "";
+			return getFileData(path) ?? "";
 		},
 		readBinary: path => {
 			log.push({ operation: "read", path });
-			return binaryFiles[path] ?? Buffer.from("");
+			return Buffer.from(getFileData(path) ?? "");
 		},
 		watch: (_, { onUpdate }) => {
-			const keys = [
-				...Object.keys(textFiles),
-				...Object.keys(binaryFiles)
-			];
-			keys.forEach(onUpdate);
+			files.forEach(pair => onUpdate(pair[0]));
 		},
 		write: (path, data) => log.push({ operation: "write", path, data }),
 		remove: path => log.push({ operation: "remove", path }),
