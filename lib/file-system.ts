@@ -1,7 +1,7 @@
 import { lstatSync, outputFileSync, readFileSync, removeSync } from "fs-extra"
 import glob from "glob";
 import { resolve as resolvePath, join as joinPath } from "path";
-import { Dictionary, FileData, FileSystem, TestFileSystem, TestFileSystemLogItem } from "./types"
+import { Dictionary, FileSystem, TestFileSystem, TestFileSystemLogItem } from "./types"
 import chokidar from "chokidar";
 
 interface CreateFileSystemParams {
