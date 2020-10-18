@@ -7,10 +7,10 @@ export interface FileSystem {
 	readBinary: (path: string) => Buffer;
 	write: (path: string, data: FileData) => void;
 	remove: (path: string) => void;
-	watch: (dirPath: string, params: WatchFilesParams) => void;
+	watch: (dirPath: string, params: WatchCallbacks) => void;
 }
 
-interface WatchFilesParams {
+export interface WatchCallbacks {
 	onUpdate: (absPath: string) => void;
 	onRemove: (absPath: string) => void;
 }
