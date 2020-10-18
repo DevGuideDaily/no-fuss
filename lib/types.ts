@@ -1,5 +1,3 @@
-import { readFileSync } from "fs-extra";
-
 export type Dictionary<T> = Record<string, T | undefined> & Object;
 
 export type FileData = string | Buffer;
@@ -17,30 +15,26 @@ interface WatchFilesParams {
 	onRemove: (absPath: string) => void;
 }
 
-export interface TestFileSystem extends FileSystem {
-	getLog: () => TestFileSystemLogItem[];
-}
-
-interface TestFileSystemReadLogItem {
+interface FileSystemReadLogItem {
 	operation: "read";
 	path: string;
 }
 
-interface TestFileSystemWriteLogItem {
+interface FileSystemWriteLogItem {
 	operation: "write";
 	path: string;
 	data: FileData;
 }
 
-interface TestFileSystemRemoveLogItem {
+interface FileSystemRemoveLogItem {
 	operation: "remove";
 	path: string;
 }
 
-export type TestFileSystemLogItem =
-	TestFileSystemReadLogItem |
-	TestFileSystemWriteLogItem |
-	TestFileSystemRemoveLogItem;
+export type FileSystemLogItem =
+	FileSystemReadLogItem |
+	FileSystemWriteLogItem |
+	FileSystemRemoveLogItem;
 
 export interface Transformer {
 	srcExt: string;

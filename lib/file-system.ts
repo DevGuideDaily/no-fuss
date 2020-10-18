@@ -1,7 +1,7 @@
 import { lstatSync, outputFileSync, readFileSync, removeSync } from "fs-extra"
 import glob from "glob";
 import { resolve as resolvePath, join as joinPath } from "path";
-import { Dictionary, FileSystem, TestFileSystem, TestFileSystemLogItem } from "./types"
+import { FileSystem, FileSystemLogItem } from "./types"
 import chokidar from "chokidar";
 
 interface CreateFileSystemParams {
@@ -41,29 +41,38 @@ const createBasicFileSystem = (): FileSystem => {
 }
 
 interface CreateTestFileSystemParams {
-	files?: Array<[string, string]>
+	files?: Array<[string, string]>;
+	expectedCount?: number;
+	onFinish?: (log: FileSystemLogItem[]) => void;
 }
 
-export const createTestFileSystem = ({ files = [] }: CreateTestFileSystemParams): TestFileSystem => {
-	const log: TestFileSystemLogItem[] = [];
+export const createTestFileSystem = ({
+	files = [],
+	expectedCount = 0,
+	onFinish
+}: CreateTestFileSystemParams): FileSystem => {
+	const log: FileSystemLogItem[] = [];
 
 	const getFileData = (path: string) =>
 		files.find(pair => pair[0] === path)?.[1];
 
+	const handleOperation = (item: FileSystemLogItem) => {
+		log.push(item);
+		if (log.length === expectedCount)
+			onFinish?.(log);
+	}
+
 	return {
 		readText: path => {
-			log.push({ operation: "read", path });
+			handleOperation({ operation: "read", path });
 			return getFileData(path) ?? "";
 		},
 		readBinary: path => {
-			log.push({ operation: "read", path });
+			handleOperation({ operation: "read", path });
 			return Buffer.from(getFileData(path) ?? "");
 		},
-		watch: (_, { onUpdate }) => {
-			files.forEach(pair => onUpdate(pair[0]));
-		},
-		write: (path, data) => log.push({ operation: "write", path, data }),
-		remove: path => log.push({ operation: "remove", path }),
-		getLog: () => log
+		watch: (_, { onUpdate }) => files.forEach(pair => onUpdate(pair[0])),
+		write: (path, data) => handleOperation({ operation: "write", path, data }),
+		remove: path => handleOperation({ operation: "remove", path })
 	}
 }

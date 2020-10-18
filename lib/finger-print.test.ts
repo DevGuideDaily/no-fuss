@@ -3,8 +3,21 @@ import { createHash } from "crypto";
 import { createTestFileSystem } from "./file-system";
 
 describe("fingerPrintFile", () => {
-	it("adds the hash to the file name", () => {
-		const fileSystem = createTestFileSystem({});
+	it("adds the hash to the file name", done => {
+		const fileSystem = createTestFileSystem({
+			expectedCount: 1,
+			onFinish: log => {
+				expect(log).toEqual([
+					{
+						operation: "write",
+						path: `/out/folder/file.${hexHash}.oe`,
+						data: fileData
+					}
+				]);
+				done();
+			}
+		});
+
 		const fileData = "Some file data";
 		const hexHash = createHash("md5")
 			.update(fileData)
@@ -19,15 +32,5 @@ describe("fingerPrintFile", () => {
 			outExt: ".oe",
 			fileSystem
 		});
-
-
-		const log = fileSystem.getLog();
-		expect(log).toEqual([
-			{
-				operation: "write",
-				path: `/out/folder/file.${hexHash}.oe`,
-				data: fileData
-			}
-		]);
 	});
 });
