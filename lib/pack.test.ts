@@ -4,7 +4,7 @@ import { pugTransformer } from "./transformers/pug";
 
 describe("pack", () => {
 	describe("with only one file", () => {
-		it("simply transforms and writes to output", () => {
+		it("simply transforms and writes to output", done => {
 			const fileSystem = createTestFileSystem({
 				expectedCount: 3,
 				onFinish: log => {
@@ -13,6 +13,7 @@ describe("pack", () => {
 						{ operation: "read", path: "/src/file.pug" },
 						{ operation: "write", path: "/out/file.html", data: "<h1>Hello World</h1>" },
 					]);
+					done();
 				}
 			});
 
@@ -61,6 +62,41 @@ describe("pack", () => {
 			});
 
 			fileSystem.write("/src/file.pug", "h1 Hello World")
+		});
+
+		it("removes the output if source is removed", done => {
+			const fileSystem = createTestFileSystem({
+				expectedCount: 5,
+				onFinish: log => {
+					expect(log).toEqual([
+						{ operation: "write", path: "/src/file.pug", data: "h1 Hello World" },
+						{ operation: "read", path: "/src/file.pug" },
+						{ operation: "write", path: "/out/file.html", data: "<h1>Hello World</h1>" },
+						{ operation: "remove", path: "/src/file.pug" },
+						{ operation: "remove", path: "/out/file.html" },
+					]);
+					done();
+				}
+			});
+
+			let bubbleCount = 0;
+
+			pack({
+				fileSystem,
+				outDirPath: "/out",
+				srcDirPath: "/src",
+				transformers: [pugTransformer],
+				callbacks: {
+					onBubbleUpFinished: () => {
+						if (bubbleCount === 0) {
+							fileSystem.remove("/src/file.pug");
+							bubbleCount += 1;
+						}
+					}
+				}
+			});
+
+			fileSystem.write("/src/file.pug", "h1 Hello World");
 		});
 	});
 });
