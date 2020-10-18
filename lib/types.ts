@@ -55,3 +55,5 @@ export type ParsedFilePart = string | {
 	originalPath: string;
 	absFilePath: string;
 }
+
+export type HashFileData = (data: FileData) => string;

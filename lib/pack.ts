@@ -1,5 +1,5 @@
 import { fingerPrintFile } from "./finger-print";
-import { Dictionary, FileData, FileSystem, ParsedFile, ParsedFilePart, Transformer, TransformResult } from "./types";
+import { Dictionary, FileData, FileSystem, HashFileData, ParsedFile, ParsedFilePart, Transformer, TransformResult } from "./types";
 import { resolve as resolvePath, parse as parsePath, relative as getRelatvePath } from "path";
 import { canParse, parse } from "./parse";
 
@@ -8,6 +8,7 @@ interface PackParams {
 	outDirPath: string;
 	transformers: Transformer[];
 	fileSystem: FileSystem;
+	hashFileData?: HashFileData;
 	callbacks?: {
 		onBubbleUpFinished?: () => void;
 	};
@@ -18,6 +19,7 @@ export const pack = ({
 	outDirPath,
 	transformers,
 	fileSystem,
+	hashFileData,
 	callbacks = {}
 }: PackParams) => {
 	const absSrcDirPath = resolvePath(srcDirPath);
@@ -153,6 +155,7 @@ export const pack = ({
 			absSrcFilePath,
 			outExt,
 			absOutDirPath,
+			hashFileData,
 			fileSystem
 		});
 	}

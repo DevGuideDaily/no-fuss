@@ -1,4 +1,4 @@
-import { FileData, FileSystem } from "./types";
+import { FileData, FileSystem, HashFileData } from "./types";
 import { createHash } from "crypto";
 import { parse as parsePath, join as joinPath, relative as getRelativePath } from "path";
 
@@ -16,6 +16,7 @@ interface FingerPrintFileParams {
 	outExt: string;
 	absOutDirPath: string;
 	fileSystem: FileSystem;
+	hashFileData?: HashFileData,
 	skip?: RegExp[];
 }
 
@@ -26,9 +27,10 @@ export const fingerPrintFile = ({
 	outExt,
 	absOutDirPath,
 	fileSystem,
+	hashFileData = hashFileDataMD5,
 	skip = defaultSkip
 }: FingerPrintFileParams) => {
-	const hash = getFileHash(absSrcFilePath, skip, fileData);
+	const hash = getFileHash({ absSrcFilePath, skip, fileData, hashFileData });
 	const relativePath = getRelativePath(absSrcDirPath, absSrcFilePath);
 	const { dir: relativeDir } = parsePath(relativePath);
 	const { name } = parsePath(absSrcFilePath);
@@ -37,12 +39,24 @@ export const fingerPrintFile = ({
 	return absOutPath;
 }
 
-const getFileHash = (absSrcFilePath: string, skip: RegExp[], fileData: FileData) => {
+interface GetFileHashParams {
+	absSrcFilePath: string;
+	skip: RegExp[];
+	fileData: FileData;
+	hashFileData: HashFileData;
+}
+
+const getFileHash = ({
+	absSrcFilePath,
+	skip,
+	fileData,
+	hashFileData
+}: GetFileHashParams) => {
 	const shouldSkip = skip.some(regex => regex.test(absSrcFilePath));
 	return shouldSkip ? "" : `.${hashFileData(fileData).slice(0, hashLength)}`;
 }
 
-const hashFileData = (fileData: FileData) => {
+const hashFileDataMD5 = (fileData: FileData) => {
 	const hash = createHash("md5");
 	if (typeof fileData === "string") {
 		return hash.update(fileData).digest("hex");
