@@ -20,6 +20,19 @@
 			"outFiles": [
 				"${workspaceFolder}/bin/**/*.js"
 			]
+		},
+		{
+			"type": "node",
+			"request": "launch",
+			"name": "Jest - Current File",
+			"program": "${workspaceFolder}/node_modules/.bin/jest",
+			"args": [
+				"${fileBasenameNoExtension}",
+				"--config",
+				"jest.config.js"
+			],
+			"internalConsoleOptions": "neverOpen",
+			"console": "integratedTerminal"
 		}
 	]
 }
