@@ -8,13 +8,17 @@ interface PackParams {
 	outDirPath: string;
 	transformers: Transformer[];
 	fileSystem: FileSystem;
+	callbacks?: {
+		onBubbleUpFinished?: () => void;
+	};
 }
 
 export const pack = ({
 	srcDirPath,
 	outDirPath,
 	transformers,
-	fileSystem
+	fileSystem,
+	callbacks = {}
 }: PackParams) => {
 	const absSrcDirPath = resolvePath(srcDirPath);
 	const absOutDirPath = resolvePath(outDirPath);
@@ -66,7 +70,7 @@ export const pack = ({
 		return parse({ absSrcDirPath, absSrcFilePath, data, ext });
 	}
 
-	const bubbleUp = async (absSrcChildPath: string, visited = new Set<string>()) => {
+	const bubbleUp = async (absSrcChildPath: string, visited = new Set<string>(), level = 1) => {
 		visited.add(absSrcChildPath);
 
 		for (const absSrcParentPath in parsedFilesBeforeTransMap) {
@@ -86,7 +90,7 @@ export const pack = ({
 				// generating output and bubbling up will be called in the second loop
 				if (!hasDependency(parsedFileAfterTrans, absSrcChildPath)) {
 					generateParsedFileOutput(absSrcParentPath);
-					bubbleUp(absSrcParentPath, visited);
+					await bubbleUp(absSrcParentPath, visited, level + 1);
 				}
 			}
 		}
@@ -96,8 +100,12 @@ export const pack = ({
 			const parsedFileAfterTrans = parsedFilesAfterTransMap[absSrcParentPath];
 			if (hasDependency(parsedFileAfterTrans, absSrcChildPath)) {
 				generateParsedFileOutput(absSrcParentPath);
-				bubbleUp(absSrcParentPath, visited);
+				await bubbleUp(absSrcParentPath, visited, level + 1);
 			}
+		}
+
+		if (level === 1) {
+			callbacks.onBubbleUpFinished?.();
 		}
 	}
 
