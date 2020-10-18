@@ -27,9 +27,15 @@ export const pack = ({
 		transformersMap[transformer.srcExt] = transformer;
 
 	const processSrcFile = async (absSrcFilePath: string) => {
-		parsedFilesBeforeTransMap[absSrcFilePath] = parseFile(absSrcFilePath);
-		const transformResult = await transformFile(absSrcFilePath);
-		const parsedFileAfterTrans = parseFile(absSrcFilePath, transformResult);
+		const binaryData = fileSystem.readBinary(absSrcFilePath);
+		const parsedFileBeforeTrans = parseSrcFile(absSrcFilePath, binaryData);
+		parsedFilesBeforeTransMap[absSrcFilePath] = parsedFileBeforeTrans;
+
+		const transformResult = await transformFile(absSrcFilePath, binaryData);
+		const parsedFileAfterTrans = transformResult ?
+			parseTransformResult(absSrcFilePath, transformResult) :
+			parsedFileBeforeTrans;
+
 		if (parsedFileAfterTrans) {
 			parsedFilesAfterTransMap[absSrcFilePath] = parsedFileAfterTrans;
 			generateParsedFileOutput(absSrcFilePath);
@@ -41,19 +47,11 @@ export const pack = ({
 		await bubbleUp(absSrcFilePath);
 	}
 
-	const transformFile = (absSrcFilePath: string) => {
+	const transformFile = (absSrcFilePath: string, binaryData: Buffer) => {
 		const { ext } = parsePath(absSrcFilePath);
 		const transformer = transformersMap[ext];
-		const data = fileSystem.readText(absSrcFilePath);
+		const data = binaryData.toString();
 		return transformer && transformer.transform(absSrcFilePath, data);
-	}
-
-	const parseFile = (absSrcFilePath: string, transformResult?: TransformResult) => {
-		if (transformResult) {
-			return parseTransformResult(absSrcFilePath, transformResult);
-		} else {
-			return parseSrcFile(absSrcFilePath);
-		}
 	}
 
 	const parseTransformResult = (absSrcFilePath: string, { ext, data }: TransformResult) => {
@@ -61,10 +59,10 @@ export const pack = ({
 		return parse({ absSrcDirPath, absSrcFilePath, data, ext })
 	}
 
-	const parseSrcFile = (absSrcFilePath: string) => {
+	const parseSrcFile = (absSrcFilePath: string, binaryData: Buffer) => {
 		const { ext } = parsePath(absSrcFilePath);
 		if (!canParse(ext)) return;
-		const data = fileSystem.readText(absSrcFilePath);
+		const data = binaryData.toString();
 		return parse({ absSrcDirPath, absSrcFilePath, data, ext });
 	}
 
@@ -76,8 +74,12 @@ export const pack = ({
 			const parsedFileBeforeTrans = parsedFilesBeforeTransMap[absSrcParentPath];
 
 			if (hasDependency(parsedFileBeforeTrans, absSrcChildPath)) {
-				const transformResult = await transformFile(absSrcParentPath);
-				const parsedFileAfterTrans = parseFile(absSrcParentPath, transformResult);
+				const binaryData = fileSystem.readBinary(absSrcParentPath);
+				const transformResult = await transformFile(absSrcParentPath, binaryData);
+				const parsedFileAfterTrans = transformResult ?
+					parseTransformResult(absSrcParentPath, transformResult) :
+					parsedFileBeforeTrans;
+
 				parsedFilesAfterTransMap[absSrcParentPath] = parsedFileAfterTrans;
 
 				// If the dependency is present even after transforming,
