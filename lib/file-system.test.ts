@@ -53,28 +53,6 @@ describe("TestFileSystem", () => {
 		});
 	});
 
-	describe("watch", () => {
-		it("calls onUpdate for every path once", () => {
-			const fs = createTestFileSystem({});
-			const paths: string[] = [];
-			fs.watch("/", {
-				onUpdate: path => paths.push(path),
-				onRemove: () => { }
-			});
-
-			fs.write("/index.pug", "p Hello World");
-			fs.write("/style.less", "body { color: red; }");
-			fs.write("/image-a.png", "Some image data A");
-			fs.write("/image-b.png", "Some image data B");
-
-			expect(paths).toHaveLength(4);
-			expect(paths).toContain("/index.pug");
-			expect(paths).toContain("/style.less");
-			expect(paths).toContain("/image-a.png");
-			expect(paths).toContain("/image-b.png");
-		});
-	});
-
 	describe("write", () => {
 		it("logs correctly", done => {
 			const fs = createTestFileSystem({
