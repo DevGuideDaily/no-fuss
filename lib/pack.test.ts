@@ -298,5 +298,43 @@ describe("pack", () => {
 
 			fileSystem.write(imagePath, imageData);
 		});
+
+		it("doesn't affect child when parent is removed", done => {
+			const expectedOperations = [
+				{ operation: "write", path: imagePath, data: imageData },
+				{ operation: "read", path: imagePath },
+				{ operation: "write", path: "/out/image.hash.jpg", data: Buffer.from(imageData) },
+				{ operation: "write", path: pagePath, data: pageData },
+				{ operation: "read", path: pagePath },
+				{ operation: "write", path: "/out/page.html", data: '<img src="/image.hash.jpg"/>' },
+
+				{ operation: "remove", path: pagePath },
+				{ operation: "remove", path: "/out/page.html" },
+			];
+
+			const fileSystem = createTestFileSystem({
+				expectedCount: expectedOperations.length,
+				onFinish: log => {
+					expect(log).toEqual(expectedOperations);
+					done();
+				}
+			});
+
+			pack({
+				fileSystem,
+				outDirPath: "/out",
+				srcDirPath: "/src",
+				transformers: [pugTransformer],
+				hashFileData: () => "hash",
+				callbacks: {
+					onBubbleUpFinished: seq(
+						() => fileSystem.write(pagePath, pageData),
+						() => fileSystem.remove(pagePath),
+					)
+				}
+			});
+
+			fileSystem.write(imagePath, imageData);
+		});
 	});
 });
