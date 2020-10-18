@@ -47,9 +47,9 @@ export const pack = ({
 			generateParsedFileOutput(absSrcFilePath);
 		} else {
 			const { ext } = parsePath(absSrcFilePath);
-			const data = fileSystem.readBinary(absSrcFilePath);
-			cleanUpAndFingerPrintFile(absSrcFilePath, ext, data);
+			fingerPrint(absSrcFilePath, ext, binaryData);
 		}
+
 		await bubbleUp(absSrcFilePath);
 	}
 
@@ -75,32 +75,11 @@ export const pack = ({
 	const bubbleUp = async (absSrcChildPath: string, visited = new Set<string>(), level = 1) => {
 		visited.add(absSrcChildPath);
 
-		for (const absSrcParentPath in parsedFilesBeforeTransMap) {
-			if (visited.has(absSrcParentPath)) continue;
-			const parsedFileBeforeTrans = parsedFilesBeforeTransMap[absSrcParentPath];
-
-			if (hasDependency(parsedFileBeforeTrans, absSrcChildPath)) {
-				const binaryData = fileSystem.readBinary(absSrcParentPath);
-				const transformResult = await transformFile(absSrcParentPath, binaryData);
-				const parsedFileAfterTrans = transformResult ?
-					parseTransformResult(absSrcParentPath, transformResult) :
-					parsedFileBeforeTrans;
-
-				parsedFilesAfterTransMap[absSrcParentPath] = parsedFileAfterTrans;
-
-				// If the dependency is present even after transforming,
-				// generating output and bubbling up will be called in the second loop
-				if (!hasDependency(parsedFileAfterTrans, absSrcChildPath)) {
-					generateParsedFileOutput(absSrcParentPath);
-					await bubbleUp(absSrcParentPath, visited, level + 1);
-				}
-			}
-		}
-
 		for (const absSrcParentPath in parsedFilesAfterTransMap) {
 			if (visited.has(absSrcParentPath)) continue;
-			const parsedFileAfterTrans = parsedFilesAfterTransMap[absSrcParentPath];
-			if (hasDependency(parsedFileAfterTrans, absSrcChildPath)) {
+			const beforeDep = hasDependency(parsedFilesBeforeTransMap[absSrcParentPath], absSrcChildPath);
+			const afterdep = hasDependency(parsedFilesAfterTransMap[absSrcParentPath], absSrcChildPath);
+			if (beforeDep || afterdep) {
 				generateParsedFileOutput(absSrcParentPath);
 				await bubbleUp(absSrcParentPath, visited, level + 1);
 			}
@@ -122,7 +101,7 @@ export const pack = ({
 		if (!parsedFile) return false;
 
 		const outputData = generateOutputData(parsedFile);
-		cleanUpAndFingerPrintFile(absSrcFilePath, parsedFile.ext, outputData);
+		fingerPrint(absSrcFilePath, parsedFile.ext, outputData);
 
 		return true;
 	}
@@ -146,8 +125,7 @@ export const pack = ({
 		return `/${relativePath}`;
 	}
 
-	const cleanUpAndFingerPrintFile = (absSrcFilePath: string, outExt: string, fileData: FileData) => {
-		cleanUpOutFile(absSrcFilePath);
+	const fingerPrint = (absSrcFilePath: string, outExt: string, fileData: FileData) => {
 		if (fileData.length === 0) return;
 		outFilePathsMap[absSrcFilePath] = fingerPrintFile({
 			fileData,
