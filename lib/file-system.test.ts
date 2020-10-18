@@ -57,7 +57,7 @@ describe("TestFileSystem", () => {
 		it("calls onUpdate for every path once", () => {
 			const fs = createTestFileSystem({});
 			const paths: string[] = [];
-			fs.watch("", {
+			fs.watch("/", {
 				onUpdate: path => paths.push(path),
 				onRemove: () => { }
 			});

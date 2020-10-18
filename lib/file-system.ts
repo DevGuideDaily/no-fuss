@@ -53,6 +53,7 @@ export const createTestFileSystem = ({
 	const log: FileSystemLogItem[] = [];
 	const files: Dictionary<FileData> = {};
 
+	let watchPath: string | undefined;
 	let watchCallbacks: WatchCallbacks | undefined;
 
 	const handleOperation = (item: FileSystemLogItem) => {
@@ -70,18 +71,23 @@ export const createTestFileSystem = ({
 			handleOperation({ operation: "read", path });
 			return Buffer.from(files[path] ?? "");
 		},
-		watch: (_, callbacks) => {
+		watch: (path, callbacks) => {
+			watchPath = path;
 			watchCallbacks = callbacks;
 		},
 		write: (path, data) => {
 			files[path] = data;
 			handleOperation({ operation: "write", path, data });
-			watchCallbacks?.onUpdate(path);
+			if (!!watchPath && path.startsWith(watchPath)) {
+				watchCallbacks?.onUpdate(path);
+			}
 		},
 		remove: path => {
 			delete files[path];
 			handleOperation({ operation: "remove", path });
-			watchCallbacks?.onRemove(path);
+			if (!!watchPath && path.startsWith(watchPath)) {
+				watchCallbacks?.onRemove(path);
+			}
 		}
 	}
 }
