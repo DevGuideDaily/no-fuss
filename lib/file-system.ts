@@ -79,14 +79,14 @@ export const createTestFileSystem = ({
 			files[path] = data;
 			handleOperation({ operation: "write", path, data });
 			if (!!watchPath && path.startsWith(watchPath)) {
-				watchCallbacks?.onUpdate(path);
+				setImmediate(() => watchCallbacks?.onUpdate(path));
 			}
 		},
 		remove: path => {
 			delete files[path];
 			handleOperation({ operation: "remove", path });
 			if (!!watchPath && path.startsWith(watchPath)) {
-				watchCallbacks?.onRemove(path);
+				setImmediate(() => watchCallbacks?.onRemove(path));
 			}
 		}
 	}
