@@ -182,6 +182,7 @@ describe("pack", () => {
 				{ operation: "write", path: pagePath, data: pageData },
 				{ operation: "read", path: pagePath },
 				{ operation: "write", path: "/out/page.html", data: '<img src="/image.hash.jpg"/>' },
+
 				{ operation: "write", path: imagePath, data: updatedImageData },
 				{ operation: "read", path: imagePath },
 				{ operation: "write", path: "/out/image.hash.jpg", data: Buffer.from(updatedImageData) },
@@ -221,6 +222,7 @@ describe("pack", () => {
 				{ operation: "write", path: pagePath, data: pageData },
 				{ operation: "read", path: pagePath },
 				{ operation: "write", path: "/out/page.html", data: '<img src="/image.hash.jpg"/>' },
+
 				{ operation: "remove", path: imagePath },
 				{ operation: "remove", path: "/out/image.hash.jpg" },
 				{ operation: "write", path: "/out/page.html", data: '<img src="image.jpg"/>' },
@@ -244,6 +246,52 @@ describe("pack", () => {
 					onBubbleUpFinished: seq(
 						() => fileSystem.write(pagePath, pageData),
 						() => fileSystem.remove(imagePath)
+					)
+				}
+			});
+
+			fileSystem.write(imagePath, imageData);
+		});
+
+		it("doesn't regenerate child when parent is updated", done => {
+			const updatedPageData = "p Hello World"
+
+			const expectedOperations = [
+				{ operation: "write", path: imagePath, data: imageData },
+				{ operation: "read", path: imagePath },
+				{ operation: "write", path: "/out/image.hash.jpg", data: Buffer.from(imageData) },
+				{ operation: "write", path: pagePath, data: pageData },
+				{ operation: "read", path: pagePath },
+				{ operation: "write", path: "/out/page.html", data: '<img src="/image.hash.jpg"/>' },
+
+				{ operation: "write", path: pagePath, data: updatedPageData },
+				{ operation: "read", path: pagePath },
+				{ operation: "write", path: "/out/page.html", data: "<p>Hello World</p>" },
+
+				{ operation: "write", path: pagePath, data: pageData },
+				{ operation: "read", path: pagePath },
+				{ operation: "write", path: "/out/page.html", data: '<img src="/image.hash.jpg"/>' },
+			];
+
+			const fileSystem = createTestFileSystem({
+				expectedCount: expectedOperations.length,
+				onFinish: log => {
+					expect(log).toEqual(expectedOperations);
+					done();
+				}
+			});
+
+			pack({
+				fileSystem,
+				outDirPath: "/out",
+				srcDirPath: "/src",
+				transformers: [pugTransformer],
+				hashFileData: () => "hash",
+				callbacks: {
+					onBubbleUpFinished: seq(
+						() => fileSystem.write(pagePath, pageData),
+						() => fileSystem.write(pagePath, updatedPageData),
+						() => fileSystem.write(pagePath, pageData),
 					)
 				}
 			});
