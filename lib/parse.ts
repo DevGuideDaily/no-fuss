@@ -2,7 +2,8 @@ import { join as joinPath, parse as parsePath } from "path";
 import { ParsedFile, ParsedFilePart } from "./types";
 
 const filePathRegex = /([\/\.\w-_]+\.[a-z]+)/
-const parsableExt = [
+
+export const parsableExtensions = [
 	".pug",
 	".html",
 	".less",
@@ -10,8 +11,8 @@ const parsableExt = [
 	".webmanifest"
 ];
 
-export const canParse = (ext: string) =>
-	parsableExt.includes(ext);
+export const canParse = (ext: string, parsable: string[]) =>
+	parsable.includes(ext);
 
 interface ParseParams {
 	absSrcDirPath: string;

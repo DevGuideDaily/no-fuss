@@ -1,13 +1,14 @@
 import { fingerPrintFile } from "./finger-print";
 import { Dictionary, FileData, FileSystem, HashFileData, ParsedFile, ParsedFilePart, Transformer, TransformResult } from "./types";
 import { resolve as resolvePath, parse as parsePath, relative as getRelatvePath } from "path";
-import { canParse, parse } from "./parse";
+import { canParse, parse, parsableExtensions } from "./parse";
 
 interface PackParams {
 	srcDirPath: string;
 	outDirPath: string;
-	transformers: Transformer[];
 	fileSystem: FileSystem;
+	parseExtensions?: string[];
+	transformers?: Transformer[];
 	hashFileData?: HashFileData;
 	callbacks?: {
 		onBubbleUpFinished?: () => void;
@@ -17,8 +18,9 @@ interface PackParams {
 export const pack = ({
 	srcDirPath,
 	outDirPath,
-	transformers,
 	fileSystem,
+	parseExtensions = parsableExtensions,
+	transformers = [],
 	hashFileData,
 	callbacks = {}
 }: PackParams) => {
@@ -61,13 +63,13 @@ export const pack = ({
 	}
 
 	const parseTransformResult = (absSrcFilePath: string, { ext, data }: TransformResult) => {
-		if (!canParse(ext)) return;
+		if (!canParse(ext, parseExtensions)) return;
 		return parse({ absSrcDirPath, absSrcFilePath, data, ext })
 	}
 
 	const parseSrcFile = (absSrcFilePath: string, binaryData: Buffer) => {
 		const { ext } = parsePath(absSrcFilePath);
-		if (!canParse(ext)) return;
+		if (!canParse(ext, parseExtensions)) return;
 		const data = binaryData.toString();
 		return parse({ absSrcDirPath, absSrcFilePath, data, ext });
 	}

@@ -1,4 +1,4 @@
-import { canParse, parse } from "./parse";
+import { canParse, parsableExtensions, parse } from "./parse";
 
 describe("canParse", () => {
 	it("returns the correct result", () => {
@@ -13,7 +13,7 @@ describe("canParse", () => {
 		];
 
 		extensions.forEach(pair =>
-			expect(canParse(pair[0])).toBe(pair[1]))
+			expect(canParse(pair[0], parsableExtensions)).toBe(pair[1]))
 	})
 });
 
