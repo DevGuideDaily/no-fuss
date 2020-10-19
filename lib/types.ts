@@ -16,19 +16,16 @@ export interface WatchCallbacks {
 }
 
 interface FileSystemReadLogItem {
-	operation: "read";
-	path: string;
+	read: string;
 }
 
 interface FileSystemWriteLogItem {
-	operation: "write";
-	path: string;
+	write: string;
 	data: FileData;
 }
 
 interface FileSystemRemoveLogItem {
-	operation: "remove";
-	path: string;
+	remove: string;
 }
 
 export type FileSystemLogItem =

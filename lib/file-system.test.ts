@@ -7,10 +7,10 @@ describe("TestFileSystem", () => {
 				expectedCount: 4,
 				onFinish: log => {
 					expect(log).toEqual([
-						{ operation: "write", path: "/index.pug", data: "p Hello World" },
-						{ operation: "write", path: "/style.less", data: "body { color: red; }" },
-						{ operation: "read", path: "/index.pug" },
-						{ operation: "read", path: "/style.less" }
+						{ write: "/index.pug", data: "p Hello World" },
+						{ write: "/style.less", data: "body { color: red; }" },
+						{ read: "/index.pug" },
+						{ read: "/style.less" }
 					]);
 					done();
 				}
@@ -33,10 +33,10 @@ describe("TestFileSystem", () => {
 				expectedCount: 4,
 				onFinish: log => {
 					expect(log).toEqual([
-						{ operation: "write", path: "/image-a.png", data: "Some image data A" },
-						{ operation: "write", path: "/image-b.png", data: "Some image data B" },
-						{ operation: "read", path: "/image-a.png" },
-						{ operation: "read", path: "/image-b.png" }
+						{ write: "/image-a.png", data: "Some image data A" },
+						{ write: "/image-b.png", data: "Some image data B" },
+						{ read: "/image-a.png" },
+						{ read: "/image-b.png" }
 					]);
 					done();
 				}
@@ -59,8 +59,8 @@ describe("TestFileSystem", () => {
 				expectedCount: 2,
 				onFinish: log => {
 					expect(log).toEqual([
-						{ operation: "write", path: "/file-1", data: "Data 1" },
-						{ operation: "write", path: "/file-2", data: "Data 2" }
+						{ write: "/file-1", data: "Data 1" },
+						{ write: "/file-2", data: "Data 2" }
 					]);
 					done();
 				}
@@ -86,8 +86,8 @@ describe("TestFileSystem", () => {
 				expectedCount: 2,
 				onFinish: log => {
 					expect(log).toEqual([
-						{ operation: "remove", path: "/file-1" },
-						{ operation: "remove", path: "/file-2" }
+						{ remove: "/file-1" },
+						{ remove: "/file-2" }
 					]);
 					done();
 				}

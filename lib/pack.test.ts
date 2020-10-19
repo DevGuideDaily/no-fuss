@@ -7,9 +7,9 @@ describe("pack", () => {
 	describe("with only one file", () => {
 		it("simply transforms and writes to output", done => {
 			const expectedOperations = [
-				{ operation: "write", path: "/src/file.pug", data: "h1 Hello World" },
-				{ operation: "read", path: "/src/file.pug" },
-				{ operation: "write", path: "/out/file.html", data: "<h1>Hello World</h1>" },
+				{ write: "/src/file.pug", data: "h1 Hello World" },
+				{ read: "/src/file.pug" },
+				{ write: "/out/file.html", data: "<h1>Hello World</h1>" },
 			];
 
 			const fileSystem = createTestFileSystem({
@@ -32,12 +32,12 @@ describe("pack", () => {
 
 		it("updates the output if source is updated", done => {
 			const expectedOperations = [
-				{ operation: "write", path: "/src/file.pug", data: "h1 Hello World" },
-				{ operation: "read", path: "/src/file.pug" },
-				{ operation: "write", path: "/out/file.html", data: "<h1>Hello World</h1>" },
-				{ operation: "write", path: "/src/file.pug", data: "h1 Updated" },
-				{ operation: "read", path: "/src/file.pug" },
-				{ operation: "write", path: "/out/file.html", data: "<h1>Updated</h1>" },
+				{ write: "/src/file.pug", data: "h1 Hello World" },
+				{ read: "/src/file.pug" },
+				{ write: "/out/file.html", data: "<h1>Hello World</h1>" },
+				{ write: "/src/file.pug", data: "h1 Updated" },
+				{ read: "/src/file.pug" },
+				{ write: "/out/file.html", data: "<h1>Updated</h1>" },
 			];
 
 			const fileSystem = createTestFileSystem({
@@ -65,11 +65,11 @@ describe("pack", () => {
 
 		it("removes the output if source is removed", done => {
 			const expectedOperations = [
-				{ operation: "write", path: "/src/file.pug", data: "h1 Hello World" },
-				{ operation: "read", path: "/src/file.pug" },
-				{ operation: "write", path: "/out/file.html", data: "<h1>Hello World</h1>" },
-				{ operation: "remove", path: "/src/file.pug" },
-				{ operation: "remove", path: "/out/file.html" },
+				{ write: "/src/file.pug", data: "h1 Hello World" },
+				{ read: "/src/file.pug" },
+				{ write: "/out/file.html", data: "<h1>Hello World</h1>" },
+				{ remove: "/src/file.pug" },
+				{ remove: "/out/file.html" },
 			];
 
 			const fileSystem = createTestFileSystem({
@@ -105,13 +105,13 @@ describe("pack", () => {
 
 		it("generates correct output when parent is added first", done => {
 			const expectedOperations = [
-				{ operation: "write", path: pagePath, data: pageData },
-				{ operation: "read", path: pagePath },
-				{ operation: "write", path: "/out/page.html", data: '<img src="image.jpg"/>' },
-				{ operation: "write", path: imagePath, data: imageData },
-				{ operation: "read", path: imagePath },
-				{ operation: "write", path: "/out/image.hash.jpg", data: Buffer.from(imageData) },
-				{ operation: "write", path: "/out/page.html", data: '<img src="/image.hash.jpg"/>' },
+				{ write: pagePath, data: pageData },
+				{ read: pagePath },
+				{ write: "/out/page.html", data: '<img src="image.jpg"/>' },
+				{ write: imagePath, data: imageData },
+				{ read: imagePath },
+				{ write: "/out/image.hash.jpg", data: Buffer.from(imageData) },
+				{ write: "/out/page.html", data: '<img src="/image.hash.jpg"/>' },
 			];
 
 			const fileSystem = createTestFileSystem({
@@ -140,12 +140,12 @@ describe("pack", () => {
 
 		it("generates correct output when child is added first", done => {
 			const expectedOperations = [
-				{ operation: "write", path: imagePath, data: imageData },
-				{ operation: "read", path: imagePath },
-				{ operation: "write", path: "/out/image.hash.jpg", data: Buffer.from(imageData) },
-				{ operation: "write", path: pagePath, data: pageData },
-				{ operation: "read", path: pagePath },
-				{ operation: "write", path: "/out/page.html", data: '<img src="/image.hash.jpg"/>' },
+				{ write: imagePath, data: imageData },
+				{ read: imagePath },
+				{ write: "/out/image.hash.jpg", data: Buffer.from(imageData) },
+				{ write: pagePath, data: pageData },
+				{ read: pagePath },
+				{ write: "/out/page.html", data: '<img src="/image.hash.jpg"/>' },
 			];
 
 			const fileSystem = createTestFileSystem({
@@ -176,17 +176,17 @@ describe("pack", () => {
 			const updatedImageData = "Updated Image Data";
 
 			const expectedOperations = [
-				{ operation: "write", path: imagePath, data: imageData },
-				{ operation: "read", path: imagePath },
-				{ operation: "write", path: "/out/image.hash.jpg", data: Buffer.from(imageData) },
-				{ operation: "write", path: pagePath, data: pageData },
-				{ operation: "read", path: pagePath },
-				{ operation: "write", path: "/out/page.html", data: '<img src="/image.hash.jpg"/>' },
+				{ write: imagePath, data: imageData },
+				{ read: imagePath },
+				{ write: "/out/image.hash.jpg", data: Buffer.from(imageData) },
+				{ write: pagePath, data: pageData },
+				{ read: pagePath },
+				{ write: "/out/page.html", data: '<img src="/image.hash.jpg"/>' },
 
-				{ operation: "write", path: imagePath, data: updatedImageData },
-				{ operation: "read", path: imagePath },
-				{ operation: "write", path: "/out/image.hash.jpg", data: Buffer.from(updatedImageData) },
-				{ operation: "write", path: "/out/page.html", data: '<img src="/image.hash.jpg"/>' },
+				{ write: imagePath, data: updatedImageData },
+				{ read: imagePath },
+				{ write: "/out/image.hash.jpg", data: Buffer.from(updatedImageData) },
+				{ write: "/out/page.html", data: '<img src="/image.hash.jpg"/>' },
 			];
 
 			const fileSystem = createTestFileSystem({
@@ -216,16 +216,16 @@ describe("pack", () => {
 
 		it("regenerates the parent when child is removed", done => {
 			const expectedOperations = [
-				{ operation: "write", path: imagePath, data: imageData },
-				{ operation: "read", path: imagePath },
-				{ operation: "write", path: "/out/image.hash.jpg", data: Buffer.from(imageData) },
-				{ operation: "write", path: pagePath, data: pageData },
-				{ operation: "read", path: pagePath },
-				{ operation: "write", path: "/out/page.html", data: '<img src="/image.hash.jpg"/>' },
+				{ write: imagePath, data: imageData },
+				{ read: imagePath },
+				{ write: "/out/image.hash.jpg", data: Buffer.from(imageData) },
+				{ write: pagePath, data: pageData },
+				{ read: pagePath },
+				{ write: "/out/page.html", data: '<img src="/image.hash.jpg"/>' },
 
-				{ operation: "remove", path: imagePath },
-				{ operation: "remove", path: "/out/image.hash.jpg" },
-				{ operation: "write", path: "/out/page.html", data: '<img src="image.jpg"/>' },
+				{ remove: imagePath },
+				{ remove: "/out/image.hash.jpg" },
+				{ write: "/out/page.html", data: '<img src="image.jpg"/>' },
 			];
 
 			const fileSystem = createTestFileSystem({
@@ -257,20 +257,20 @@ describe("pack", () => {
 			const updatedPageData = "p Hello World"
 
 			const expectedOperations = [
-				{ operation: "write", path: imagePath, data: imageData },
-				{ operation: "read", path: imagePath },
-				{ operation: "write", path: "/out/image.hash.jpg", data: Buffer.from(imageData) },
-				{ operation: "write", path: pagePath, data: pageData },
-				{ operation: "read", path: pagePath },
-				{ operation: "write", path: "/out/page.html", data: '<img src="/image.hash.jpg"/>' },
+				{ write: imagePath, data: imageData },
+				{ read: imagePath },
+				{ write: "/out/image.hash.jpg", data: Buffer.from(imageData) },
+				{ write: pagePath, data: pageData },
+				{ read: pagePath },
+				{ write: "/out/page.html", data: '<img src="/image.hash.jpg"/>' },
 
-				{ operation: "write", path: pagePath, data: updatedPageData },
-				{ operation: "read", path: pagePath },
-				{ operation: "write", path: "/out/page.html", data: "<p>Hello World</p>" },
+				{ write: pagePath, data: updatedPageData },
+				{ read: pagePath },
+				{ write: "/out/page.html", data: "<p>Hello World</p>" },
 
-				{ operation: "write", path: pagePath, data: pageData },
-				{ operation: "read", path: pagePath },
-				{ operation: "write", path: "/out/page.html", data: '<img src="/image.hash.jpg"/>' },
+				{ write: pagePath, data: pageData },
+				{ read: pagePath },
+				{ write: "/out/page.html", data: '<img src="/image.hash.jpg"/>' },
 			];
 
 			const fileSystem = createTestFileSystem({
@@ -301,15 +301,15 @@ describe("pack", () => {
 
 		it("doesn't affect child when parent is removed", done => {
 			const expectedOperations = [
-				{ operation: "write", path: imagePath, data: imageData },
-				{ operation: "read", path: imagePath },
-				{ operation: "write", path: "/out/image.hash.jpg", data: Buffer.from(imageData) },
-				{ operation: "write", path: pagePath, data: pageData },
-				{ operation: "read", path: pagePath },
-				{ operation: "write", path: "/out/page.html", data: '<img src="/image.hash.jpg"/>' },
+				{ write: imagePath, data: imageData },
+				{ read: imagePath },
+				{ write: "/out/image.hash.jpg", data: Buffer.from(imageData) },
+				{ write: pagePath, data: pageData },
+				{ read: pagePath },
+				{ write: "/out/page.html", data: '<img src="/image.hash.jpg"/>' },
 
-				{ operation: "remove", path: pagePath },
-				{ operation: "remove", path: "/out/page.html" },
+				{ remove: pagePath },
+				{ remove: "/out/page.html" },
 			];
 
 			const fileSystem = createTestFileSystem({

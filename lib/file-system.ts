@@ -64,11 +64,11 @@ export const createTestFileSystem = ({
 
 	return {
 		readText: path => {
-			handleOperation({ operation: "read", path });
+			handleOperation({ read: path });
 			return files[path]?.toString() ?? "";
 		},
 		readBinary: path => {
-			handleOperation({ operation: "read", path });
+			handleOperation({ read: path });
 			return Buffer.from(files[path] ?? "");
 		},
 		watch: (path, callbacks) => {
@@ -77,14 +77,14 @@ export const createTestFileSystem = ({
 		},
 		write: (path, data) => {
 			files[path] = data;
-			handleOperation({ operation: "write", path, data });
+			handleOperation({ write: path, data });
 			if (!!watchPath && path.startsWith(watchPath)) {
 				setImmediate(() => watchCallbacks?.onUpdate(path));
 			}
 		},
 		remove: path => {
 			delete files[path];
-			handleOperation({ operation: "remove", path });
+			handleOperation({ remove: path });
 			if (!!watchPath && path.startsWith(watchPath)) {
 				setImmediate(() => watchCallbacks?.onRemove(path));
 			}

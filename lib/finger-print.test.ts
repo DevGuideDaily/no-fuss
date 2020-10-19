@@ -9,8 +9,7 @@ describe("fingerPrintFile", () => {
 			onFinish: log => {
 				expect(log).toEqual([
 					{
-						operation: "write",
-						path: `/out/folder/file.${hexHash}.oe`,
+						write: `/out/folder/file.${hexHash}.oe`,
 						data: fileData
 					}
 				]);
