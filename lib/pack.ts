@@ -35,6 +35,11 @@ export const pack = ({
 		transformersMap[transformer.srcExt] = transformer;
 
 	const processSrcFile = async (absSrcFilePath: string) => {
+		await transformAndOutput(absSrcFilePath);
+		await bubbleUp(absSrcFilePath);
+	}
+
+	const transformAndOutput = async (absSrcFilePath: string) => {
 		const binaryData = fileSystem.readBinary(absSrcFilePath);
 		const parsedFileBeforeTrans = parseSrcFile(absSrcFilePath, binaryData);
 		parsedFilesBeforeTransMap[absSrcFilePath] = parsedFileBeforeTrans;
@@ -54,8 +59,6 @@ export const pack = ({
 			const { ext } = parsePath(absSrcFilePath);
 			fingerPrint(absSrcFilePath, ext, binaryData);
 		}
-
-		await bubbleUp(absSrcFilePath);
 	}
 
 	const transformFile = (absSrcFilePath: string, binaryData: Buffer) => {
@@ -90,7 +93,7 @@ export const pack = ({
 			const beforeDep = hasDependency(parsedFilesBeforeTransMap[absSrcParentPath], absSrcChildPath);
 			const afterDep = hasDependency(parsedFilesAfterTransMap[absSrcParentPath], absSrcChildPath);
 			if (beforeDep || afterDep) {
-				generateParsedFileOutput(absSrcParentPath);
+				await transformAndOutput(absSrcParentPath);
 				await bubbleUp(absSrcParentPath, visited, level + 1);
 			}
 		}

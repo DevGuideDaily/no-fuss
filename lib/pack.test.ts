@@ -115,6 +115,7 @@ describe("pack", () => {
 				{ write: imagePath, data: imageData },
 				{ read: imagePath },
 				{ write: "/out/image.hash.jpg", data: Buffer.from(imageData) },
+				{ read: pagePath },
 				{ write: "/out/page.html", data: '<img src="/image.hash.jpg"/>' },
 			];
 
@@ -190,6 +191,7 @@ describe("pack", () => {
 				{ write: imagePath, data: updatedImageData },
 				{ read: imagePath },
 				{ write: "/out/image.hash.jpg", data: Buffer.from(updatedImageData) },
+				{ read: pagePath },
 				{ write: "/out/page.html", data: '<img src="/image.hash.jpg"/>' },
 			];
 
@@ -229,6 +231,7 @@ describe("pack", () => {
 
 				{ remove: imagePath },
 				{ remove: "/out/image.hash.jpg" },
+				{ read: pagePath },
 				{ write: "/out/page.html", data: '<img src="image.jpg"/>' },
 			];
 
@@ -350,7 +353,7 @@ describe("pack", () => {
 		describe("when output is not parsable", () => {
 			const parseExtensions = [".pug"];
 
-			it("doesn't regenerate the parent when child is updated", done => {
+			it("regenerates the parent when child is updated", done => {
 				const updatedImageData = "Updated Image Data";
 
 				const expectedOperations = [
@@ -364,8 +367,8 @@ describe("pack", () => {
 					{ write: imagePath, data: updatedImageData },
 					{ read: imagePath },
 					{ write: "/out/image.hash.jpg", data: Buffer.from(updatedImageData) },
-
-					{ write: tmpFilePath, data: tmpFileData },
+					{ read: pagePath },
+					{ write: "/out/page.html", data: '<img src="image.jpg"/>' },
 				];
 
 				const fileSystem = createTestFileSystem({
@@ -395,7 +398,7 @@ describe("pack", () => {
 				fileSystem.write(imagePath, imageData);
 			});
 
-			it("doesn't regenerate the parent when child is removed", done => {
+			it("regenerates the parent when child is removed", done => {
 				const expectedOperations = [
 					{ write: imagePath, data: imageData },
 					{ read: imagePath },
@@ -406,8 +409,8 @@ describe("pack", () => {
 
 					{ remove: imagePath },
 					{ remove: "/out/image.hash.jpg" },
-
-					{ write: tmpFilePath, data: tmpFileData },
+					{ read: pagePath },
+					{ write: "/out/page.html", data: '<img src="image.jpg"/>' },
 				];
 
 				const fileSystem = createTestFileSystem({
@@ -460,6 +463,7 @@ describe("pack", () => {
 					{ write: imagePath, data: updatedImageData },
 					{ read: imagePath },
 					{ write: "/out/image.hash.jpg", data: Buffer.from(updatedImageData) },
+					{ read: pagePath },
 					{ write: "/out/page.html", data: dummyData },
 				];
 
@@ -499,6 +503,7 @@ describe("pack", () => {
 
 					{ remove: imagePath },
 					{ remove: "/out/image.hash.jpg" },
+					{ read: pagePath },
 					{ write: "/out/page.html", data: dummyData },
 				];
 
