@@ -9,14 +9,29 @@ interface CreateFileSystemParams {
 }
 
 export const createFileSystem = ({ watch }: CreateFileSystemParams) => {
-	const fileSystem = createBasicFileSystem();
+	let watcher: chokidar.FSWatcher | undefined;
+	let watchPath: string | undefined;
+
+	const fileSystem: FileSystem = {
+		readText: path => readFileSync(path, { encoding: "utf-8" }),
+		readBinary: path => readFileSync(path),
+		write: (path, data) => outputFileSync(path, data),
+		remove: path => removeSync(path),
+		watch: () => { },
+		stop: () => {
+			if (!watcher || !watchPath) return;
+			watcher.unwatch(watchPath);
+			watcher.close();
+		}
+	}
 
 	if (watch) {
 		fileSystem.watch = (dirPath, { onUpdate, onRemove }) => {
-			chokidar.watch(joinPath(dirPath, "**", "*"))
-				.on("add", path => onUpdate(resolvePath(path)))
-				.on("change", path => onUpdate(resolvePath(path)))
-				.on("unlink", path => onRemove(resolvePath(path)))
+			watchPath = joinPath(dirPath, "**", "*");
+			watcher = chokidar.watch(watchPath);
+			watcher.on("add", path => onUpdate(resolvePath(path)))
+			watcher.on("change", path => onUpdate(resolvePath(path)))
+			watcher.on("unlink", path => onRemove(resolvePath(path)))
 		};
 	} else {
 		fileSystem.watch = (dirPath, { onUpdate }) => {
@@ -30,24 +45,14 @@ export const createFileSystem = ({ watch }: CreateFileSystemParams) => {
 	return fileSystem;
 }
 
-const createBasicFileSystem = (): FileSystem => {
-	return {
-		readText: path => readFileSync(path, { encoding: "utf-8" }),
-		readBinary: path => readFileSync(path),
-		write: (path, data) => outputFileSync(path, data),
-		remove: path => removeSync(path),
-		watch: () => { }
-	}
-}
-
 interface CreateTestFileSystemParams {
 	files?: Array<[string, string]>;
-	expectedCount?: number;
-	onFinish?: (log: FileSystemLogItem[]) => void;
+	expectedCount: number;
+	onFinish: (log: FileSystemLogItem[]) => void;
 }
 
 export const createTestFileSystem = ({
-	expectedCount = 0,
+	expectedCount,
 	onFinish
 }: CreateTestFileSystemParams): FileSystem => {
 	const log: FileSystemLogItem[] = [];
@@ -58,8 +63,7 @@ export const createTestFileSystem = ({
 
 	const handleOperation = (item: FileSystemLogItem) => {
 		log.push(item);
-		if (log.length === expectedCount)
-			onFinish?.(log);
+		if (log.length === expectedCount) onFinish(log);
 	}
 
 	return {
@@ -78,16 +82,21 @@ export const createTestFileSystem = ({
 		write: (path, data) => {
 			files[path] = data;
 			handleOperation({ write: path, data });
-			if (!!watchPath && path.startsWith(watchPath)) {
-				setImmediate(() => watchCallbacks?.onUpdate(path));
-			}
+			setImmediate(() => {
+				if (!!watchPath && !!watchCallbacks && path.startsWith(watchPath)) {
+					watchCallbacks.onUpdate(path);
+				}
+			})
 		},
 		remove: path => {
 			delete files[path];
 			handleOperation({ remove: path });
-			if (!!watchPath && path.startsWith(watchPath)) {
-				setImmediate(() => watchCallbacks?.onRemove(path));
-			}
-		}
+			setImmediate(() => {
+				if (!!watchPath && !!watchCallbacks && path.startsWith(watchPath)) {
+					watchCallbacks.onRemove(path);
+				}
+			});
+		},
+		stop: () => { }
 	}
 }

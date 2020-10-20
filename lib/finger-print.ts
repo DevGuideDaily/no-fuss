@@ -58,9 +58,5 @@ const getFileHash = ({
 
 const hashFileDataMD5 = (fileData: FileData) => {
 	const hash = createHash("md5");
-	if (typeof fileData === "string") {
-		return hash.update(fileData).digest("hex");
-	} else {
-		return hash.update(new DataView(fileData.buffer)).digest("hex");
-	}
+	return hash.update(fileData).digest("hex");
 }

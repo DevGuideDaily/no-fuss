@@ -1,3 +1,4 @@
 node_modules
-cli-test/dist
+integration-tests/cli/dist
 bin
+coverage

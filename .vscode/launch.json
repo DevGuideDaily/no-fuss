@@ -13,8 +13,8 @@
 			],
 			"program": "${workspaceFolder}/lib/cli.ts",
 			"args": [
-				"-scli-test/src",
-				"-ocli-test/dist",
+				"-sintegration-tests/cli/src",
+				"-ointegration-tests/cli/dist",
 			],
 			"preLaunchTask": "tsc: build - tsconfig.json",
 			"outFiles": [
