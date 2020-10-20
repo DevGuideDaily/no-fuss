@@ -2,6 +2,7 @@ import { createTestFileSystem } from "./file-system";
 import { pack } from "./pack";
 import { pugTransformer } from "./transformers/pug";
 import { seq } from "./test-helpers";
+import { Transformer } from "./types";
 
 describe("pack", () => {
 	describe("with only one file", () => {
@@ -436,5 +437,95 @@ describe("pack", () => {
 				fileSystem.write(imagePath, imageData);
 			});
 		});
+
+		describe("when dependency doesn't exist after transform", () => {
+			const dummyData = "Dummy Data";
+
+			const dummyTransformer: Transformer = {
+				srcExt: ".pug",
+				transform: () => ({ ext: ".html", data: dummyData })
+			};
+
+			it("regenerates the parent when child is updated", done => {
+				const updatedImageData = "Updated Image Data";
+
+				const expectedOperations = [
+					{ write: imagePath, data: imageData },
+					{ read: imagePath },
+					{ write: "/out/image.hash.jpg", data: Buffer.from(imageData) },
+					{ write: pagePath, data: pageData },
+					{ read: pagePath },
+					{ write: "/out/page.html", data: dummyData },
+
+					{ write: imagePath, data: updatedImageData },
+					{ read: imagePath },
+					{ write: "/out/image.hash.jpg", data: Buffer.from(updatedImageData) },
+					{ write: "/out/page.html", data: dummyData },
+				];
+
+				const fileSystem = createTestFileSystem({
+					expectedCount: expectedOperations.length,
+					onFinish: log => {
+						expect(log).toEqual(expectedOperations);
+						done();
+					}
+				});
+
+				pack({
+					fileSystem,
+					outDirPath: "/out",
+					srcDirPath: "/src",
+					transformers: [dummyTransformer],
+					hashFileData: () => "hash",
+					callbacks: {
+						onBubbleUpFinished: seq(
+							() => fileSystem.write(pagePath, pageData),
+							() => fileSystem.write(imagePath, updatedImageData)
+						)
+					}
+				});
+
+				fileSystem.write(imagePath, imageData);
+			});
+
+			it("regenerates the parent when child is removed", done => {
+				const expectedOperations = [
+					{ write: imagePath, data: imageData },
+					{ read: imagePath },
+					{ write: "/out/image.hash.jpg", data: Buffer.from(imageData) },
+					{ write: pagePath, data: pageData },
+					{ read: pagePath },
+					{ write: "/out/page.html", data: dummyData },
+
+					{ remove: imagePath },
+					{ remove: "/out/image.hash.jpg" },
+					{ write: "/out/page.html", data: dummyData },
+				];
+
+				const fileSystem = createTestFileSystem({
+					expectedCount: expectedOperations.length,
+					onFinish: log => {
+						expect(log).toEqual(expectedOperations);
+						done();
+					}
+				});
+
+				pack({
+					fileSystem,
+					outDirPath: "/out",
+					srcDirPath: "/src",
+					transformers: [dummyTransformer],
+					hashFileData: () => "hash",
+					callbacks: {
+						onBubbleUpFinished: seq(
+							() => fileSystem.write(pagePath, pageData),
+							() => fileSystem.remove(imagePath)
+						)
+					}
+				});
+
+				fileSystem.write(imagePath, imageData);
+			});
+		})
 	});
 });
