@@ -1,5 +1,5 @@
 import { createFileSystem, createTestFileSystem } from "./file-system";
-import { writeFileSync, unlinkSync, readFileSync, existsSync } from "fs";
+import { writeFileSync, unlinkSync, readFileSync, existsSync, appendFileSync } from "fs";
 import { join as joinPath } from "path";
 
 
@@ -73,15 +73,21 @@ describe("createFileSystem", () => {
 		});
 
 		setImmediate(() => writeFileSync(tmpFilePath, ""));
-		setTimeout(() => unlinkSync(tmpFilePath), 500);
+		setTimeout(() => appendFileSync(tmpFilePath, "Some data"), 500);
+		setTimeout(() => unlinkSync(tmpFilePath), 1000);
 
 		setTimeout(() => {
 			expect(removedPaths).toEqual([tmpFilePath]);
 			updatedPaths.sort();
-			expect(updatedPaths).toEqual([file1Path, file2Path, tmpFilePath]);
-			fs.stop();
+			expect(updatedPaths).toEqual([file1Path, file2Path, tmpFilePath, tmpFilePath]);
+			fs.stop?.();
 			done();
-		}, 1000);
+		}, 2000);
+	});
+
+	it("doesn't throw if stop is called without watch", () => {
+		const fs = createFileSystem({});
+		fs.stop?.();
 	});
 });
 
@@ -135,6 +141,11 @@ describe("createTestFileSystem", () => {
 
 			const imageDataB = fs.readBinary("/image-b.png");
 			expect(imageDataB).toEqual(Buffer.from("Some image data B"));
+		});
+
+		it("throws if the file doesn't exist", () => {
+			const fs = createTestFileSystem({});
+			expect(() => fs.readBinary("/wrong")).toThrow();
 		});
 	});
 
@@ -192,7 +203,7 @@ describe("createTestFileSystem", () => {
 
 			fs.write("/file", "Data 1");
 			fs.remove("/file");
-			expect(fs.readText("/file")).toEqual("");
+			expect(() => fs.readText("/file")).toThrow();
 		});
 	});
 });

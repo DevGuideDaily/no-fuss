@@ -8,7 +8,7 @@ export interface FileSystem {
 	write: (path: string, data: FileData) => void;
 	remove: (path: string) => void;
 	watch: (dirPath: string, params: WatchCallbacks) => void;
-	stop: () => void;
+	stop?: () => void;
 }
 
 export interface WatchCallbacks {
