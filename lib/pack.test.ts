@@ -103,6 +103,9 @@ describe("pack", () => {
 		const imagePath = "/src/image.jpg";
 		const imageData = "Image Data";
 
+		const tmpFilePath = "/tmp";
+		const tmpFileData = "Temp"
+
 		it("generates correct output when parent is added first", done => {
 			const expectedOperations = [
 				{ write: pagePath, data: pageData },
@@ -271,6 +274,8 @@ describe("pack", () => {
 				{ write: pagePath, data: pageData },
 				{ read: pagePath },
 				{ write: "/out/page.html", data: '<img src="/image.hash.jpg"/>' },
+
+				{ write: tmpFilePath, data: tmpFileData },
 			];
 
 			const fileSystem = createTestFileSystem({
@@ -292,6 +297,7 @@ describe("pack", () => {
 						() => fileSystem.write(pagePath, pageData),
 						() => fileSystem.write(pagePath, updatedPageData),
 						() => fileSystem.write(pagePath, pageData),
+						() => fileSystem.write(tmpFilePath, tmpFileData),
 					)
 				}
 			});
@@ -310,6 +316,8 @@ describe("pack", () => {
 
 				{ remove: pagePath },
 				{ remove: "/out/page.html" },
+
+				{ write: tmpFilePath, data: tmpFileData }
 			];
 
 			const fileSystem = createTestFileSystem({
@@ -330,11 +338,103 @@ describe("pack", () => {
 					onBubbleUpFinished: seq(
 						() => fileSystem.write(pagePath, pageData),
 						() => fileSystem.remove(pagePath),
+						() => fileSystem.write(tmpFilePath, tmpFileData),
 					)
 				}
 			});
 
 			fileSystem.write(imagePath, imageData);
+		});
+
+		describe("when output is not parsable", () => {
+			const parseExtensions = [".pug"];
+
+			it("doesn't regenerate the parent when child is updated", done => {
+				const updatedImageData = "Updated Image Data";
+
+				const expectedOperations = [
+					{ write: imagePath, data: imageData },
+					{ read: imagePath },
+					{ write: "/out/image.hash.jpg", data: Buffer.from(imageData) },
+					{ write: pagePath, data: pageData },
+					{ read: pagePath },
+					{ write: "/out/page.html", data: '<img src="image.jpg"/>' },
+
+					{ write: imagePath, data: updatedImageData },
+					{ read: imagePath },
+					{ write: "/out/image.hash.jpg", data: Buffer.from(updatedImageData) },
+
+					{ write: tmpFilePath, data: tmpFileData },
+				];
+
+				const fileSystem = createTestFileSystem({
+					expectedCount: expectedOperations.length,
+					onFinish: log => {
+						expect(log).toEqual(expectedOperations);
+						done();
+					}
+				});
+
+				pack({
+					fileSystem,
+					outDirPath: "/out",
+					srcDirPath: "/src",
+					parseExtensions,
+					transformers: [pugTransformer],
+					hashFileData: () => "hash",
+					callbacks: {
+						onBubbleUpFinished: seq(
+							() => fileSystem.write(pagePath, pageData),
+							() => fileSystem.write(imagePath, updatedImageData),
+							() => fileSystem.write(tmpFilePath, tmpFileData)
+						)
+					}
+				});
+
+				fileSystem.write(imagePath, imageData);
+			});
+
+			it("doesn't regenerate the parent when child is removed", done => {
+				const expectedOperations = [
+					{ write: imagePath, data: imageData },
+					{ read: imagePath },
+					{ write: "/out/image.hash.jpg", data: Buffer.from(imageData) },
+					{ write: pagePath, data: pageData },
+					{ read: pagePath },
+					{ write: "/out/page.html", data: '<img src="image.jpg"/>' },
+
+					{ remove: imagePath },
+					{ remove: "/out/image.hash.jpg" },
+
+					{ write: tmpFilePath, data: tmpFileData },
+				];
+
+				const fileSystem = createTestFileSystem({
+					expectedCount: expectedOperations.length,
+					onFinish: log => {
+						expect(log).toEqual(expectedOperations);
+						done();
+					}
+				});
+
+				pack({
+					fileSystem,
+					outDirPath: "/out",
+					srcDirPath: "/src",
+					parseExtensions,
+					transformers: [pugTransformer],
+					hashFileData: () => "hash",
+					callbacks: {
+						onBubbleUpFinished: seq(
+							() => fileSystem.write(pagePath, pageData),
+							() => fileSystem.remove(imagePath),
+							() => fileSystem.write(tmpFilePath, tmpFileData)
+						)
+					}
+				});
+
+				fileSystem.write(imagePath, imageData);
+			});
 		});
 	});
 });

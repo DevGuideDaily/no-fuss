@@ -47,6 +47,9 @@ export const pack = ({
 		if (parsedFileAfterTrans) {
 			parsedFilesAfterTransMap[absSrcFilePath] = parsedFileAfterTrans;
 			generateParsedFileOutput(absSrcFilePath);
+		} else if (transformResult) {
+			const { ext, data } = transformResult;
+			fingerPrint(absSrcFilePath, ext, data);
 		} else {
 			const { ext } = parsePath(absSrcFilePath);
 			fingerPrint(absSrcFilePath, ext, binaryData);
@@ -77,11 +80,16 @@ export const pack = ({
 	const bubbleUp = async (absSrcChildPath: string, visited = new Set<string>(), level = 1) => {
 		visited.add(absSrcChildPath);
 
-		for (const absSrcParentPath in parsedFilesAfterTransMap) {
+		const allParsedPaths = new Set([
+			...Object.keys(parsedFilesBeforeTransMap),
+			...Object.keys(parsedFilesAfterTransMap)
+		]);
+
+		for (const absSrcParentPath of allParsedPaths) {
 			if (visited.has(absSrcParentPath)) continue;
 			const beforeDep = hasDependency(parsedFilesBeforeTransMap[absSrcParentPath], absSrcChildPath);
-			const afterdep = hasDependency(parsedFilesAfterTransMap[absSrcParentPath], absSrcChildPath);
-			if (beforeDep || afterdep) {
+			const afterDep = hasDependency(parsedFilesAfterTransMap[absSrcParentPath], absSrcChildPath);
+			if (beforeDep || afterDep) {
 				generateParsedFileOutput(absSrcParentPath);
 				await bubbleUp(absSrcParentPath, visited, level + 1);
 			}
