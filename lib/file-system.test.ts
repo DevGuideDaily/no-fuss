@@ -62,24 +62,40 @@ describe("createFileSystem", () => {
 		}, 1000);
 	});
 
-	it("calls the remove and update callback for updated files", done => {
+	it("calls onUpdate callback for updated files", done => {
 		const fs = createFileSystem({ watch: true });
 		const updatedPaths: string[] = [];
-		const removedPaths: string[] = [];
 
 		fs.watch(integrationTestsFolder, {
 			onUpdate: path => updatedPaths.push(path),
+			onRemove: () => { }
+		});
+
+		setImmediate(() => writeFileSync(tmpFilePath, "data"));
+		setTimeout(() => appendFileSync(tmpFilePath, "more data"), 1500);
+
+		setTimeout(() => {
+			updatedPaths.sort();
+			expect(updatedPaths).toEqual([file1Path, file2Path, tmpFilePath, tmpFilePath]);
+			fs.stop?.();
+			done();
+		}, 3000);
+	});
+
+	it("calls onRemove callback for updated files", done => {
+		const fs = createFileSystem({ watch: true });
+		const removedPaths: string[] = [];
+
+		fs.watch(integrationTestsFolder, {
+			onUpdate: () => { },
 			onRemove: path => removedPaths.push(path)
 		});
 
-		setImmediate(() => writeFileSync(tmpFilePath, ""));
-		setTimeout(() => appendFileSync(tmpFilePath, "Some data"), 1000);
-		setTimeout(() => unlinkSync(tmpFilePath), 2000);
+		setImmediate(() => writeFileSync(tmpFilePath, "data"));
+		setTimeout(() => unlinkSync(tmpFilePath), 1500);
 
 		setTimeout(() => {
 			expect(removedPaths).toEqual([tmpFilePath]);
-			updatedPaths.sort();
-			expect(updatedPaths).toEqual([file1Path, file2Path, tmpFilePath, tmpFilePath]);
 			fs.stop?.();
 			done();
 		}, 3000);
