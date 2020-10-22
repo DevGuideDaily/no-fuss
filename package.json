@@ -13,7 +13,7 @@
 		"fuss": "bin/cli.js"
 	},
 	"scripts": {
-		"prepare": "rm -r bin && tsc",
+		"prepublishOnly": "rm -rf bin && tsc",
 		"test": "jest"
 	},
 	"dependencies": {
