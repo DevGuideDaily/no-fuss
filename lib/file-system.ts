@@ -38,11 +38,6 @@ export const createFileSystem = ({
 		write: (path, data) => outputFileSync(path, data),
 		remove: path => removeSync(path),
 		watch: continuouslyWatch ? continuousWatch : listWatch,
-		stop: () => {
-			if (!watcher || !watchPath) return;
-			watcher.unwatch(watchPath);
-			watcher.close();
-		}
 	}
 
 	return fileSystem;

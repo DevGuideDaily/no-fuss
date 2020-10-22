@@ -1,11 +1,9 @@
 import { createFileSystem, createTestFileSystem } from "./file-system";
 import { writeFileSync, unlinkSync, readFileSync, existsSync, appendFile, appendFileSync } from "fs-extra";
 import { join as joinPath } from "path";
-
+import chokidar from "chokidar";
 
 describe("createFileSystem", () => {
-	jest.setTimeout(30000);
-
 	const integrationTestsFolder = joinPath(__dirname, "../integration-tests/file-system");
 	const file1Path = joinPath(integrationTestsFolder, "file-1.txt");
 	const file2Path = joinPath(integrationTestsFolder, "file-2.txt");
@@ -46,66 +44,43 @@ describe("createFileSystem", () => {
 		expect(existsSync(tmpFilePath)).toEqual(false);
 	});
 
-	it("calls the update callback for all files", done => {
+	it("calls the onUpdate callback for existing files when not watching", done => {
 		const fs = createFileSystem({});
 		const updatedPaths: string[] = [];
-		const removedPaths: string[] = [];
 
 		fs.watch(integrationTestsFolder, {
 			onUpdate: path => updatedPaths.push(path),
-			onRemove: path => removedPaths.push(path)
+			onRemove: () => { }
 		});
 
 		setTimeout(() => {
-			expect(removedPaths.length).toEqual(0);
 			updatedPaths.sort();
 			expect(updatedPaths).toEqual([file1Path, file2Path]);
 			done();
 		}, 1000);
 	});
 
-	it("calls onUpdate callback for updated files", done => {
+	it("calls onUpdate and onRemove callback correctly", () => {
 		const fs = createFileSystem({ continuouslyWatch: true });
-
 		const updatedPaths: string[] = [];
+		const removedPaths: string[] = [];
+
 		fs.watch(integrationTestsFolder, {
 			onUpdate: path => updatedPaths.push(path),
-			onRemove: () => { }
-		});
-
-		setImmediate(() => writeFileSync(tmpFilePath, "data"));
-		setTimeout(() => appendFileSync(tmpFilePath, "more data"), 5000);
-
-		setTimeout(() => {
-			fs.stop?.();
-			updatedPaths.sort();
-			expect(updatedPaths).toEqual([file1Path, file2Path, tmpFilePath, tmpFilePath]);
-			done();
-		}, 10000);
-	});
-
-	it("calls onRemove callback for updated files", done => {
-		const fs = createFileSystem({ continuouslyWatch: true });
-
-		const removedPaths: string[] = [];
-		fs.watch(integrationTestsFolder, {
-			onUpdate: () => { },
 			onRemove: path => removedPaths.push(path)
 		});
 
-		setImmediate(() => writeFileSync(tmpFilePath, "data"));
-		setTimeout(() => unlinkSync(tmpFilePath), 1000);
+		//@ts-ignore
+		chokidar.trigger("add", "/added-file.txt");
 
-		setTimeout(() => {
-			fs.stop?.();
-			expect(removedPaths).toEqual([tmpFilePath]);
-			done();
-		}, 2000);
-	});
+		//@ts-ignore
+		chokidar.trigger("change", "/changed-file.txt");
 
-	it("doesn't throw if stop is called without watch", () => {
-		const fs = createFileSystem({});
-		fs.stop?.();
+		//@ts-ignore
+		chokidar.trigger("unlink", "/removed-file.txt");
+
+		expect(updatedPaths).toEqual(["/added-file.txt", "/changed-file.txt"]);
+		expect(removedPaths).toEqual(["/removed-file.txt"]);
 	});
 });
 
