@@ -49,3 +49,54 @@ The algorithm for generating the output file data takes the `ParsedFile` structu
 1. If the current part is an object, take the `absFilePath` and look to see if we have a mapping between that `absFilePath` (which is supposed to point to some file in our source directory) and some output file. If the mapping exists, use the path from the mapping. If the mapping doesn't exist, simply use the `originalPath`.
 
 This basically means that we only fingerprint paths in the output file, for which we know for sure that they point to one of the source files we have. This allows the parsing algorithm to be very naive.
+
+## Testing
+
+An important goal of this project was to ensure *100% test coverage.* To achieve this, we had to test each interaction with the file system. We must know exactly what files are being read at what time and what files with what data exactly are being written and in what order.
+
+To allow for this, an abstraction over the file system was created like so:
+
+```ts
+export interface FileSystem {
+	readText: (path: string) => string;
+	readBinary: (path: string) => Buffer;
+	write: (path: string, data: FileData) => void;
+	remove: (path: string) => void;
+	watch: (dirPath: string, params: WatchCallbacks) => void;
+	stop?: () => void;
+}
+
+export interface WatchCallbacks {
+	onUpdate: (absPath: string) => void;
+	onRemove: (absPath: string) => void;
+}
+
+interface FileSystemReadLogItem {
+	read: string;
+}
+
+interface FileSystemWriteLogItem {
+	write: string;
+	data: FileData;
+}
+
+interface FileSystemRemoveLogItem {
+	remove: string;
+}
+
+export type FileSystemLogItem =
+	FileSystemReadLogItem |
+	FileSystemWriteLogItem |
+	FileSystemRemoveLogItem;
+```
+
+The main `pack` algorithm, which implements the above described processing takes an object which implements the `FileSystem` interface.
+
+This allows us to create 2 different implementations of the `FileSystem`
+
+- One for testing
+- One for actual use
+
+The test file system stores all file data in memory and logs every operation such as read, write, remove... In the tests we setup the source files by writing to the test file system, and the let the `pack` algorithm run.
+
+After the pack algorithm runs, we examine the log of the file system and check that all the operations are performed on the correct paths, in the correct sequence and with the correct data.
