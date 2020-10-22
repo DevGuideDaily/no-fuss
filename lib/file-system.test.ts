@@ -1,5 +1,5 @@
 import { createFileSystem, createTestFileSystem } from "./file-system";
-import { writeFileSync, unlinkSync, readFileSync, existsSync, appendFileSync } from "fs";
+import { writeFileSync, unlinkSync, readFileSync, existsSync, appendFile } from "fs-extra";
 import { join as joinPath } from "path";
 
 
@@ -72,14 +72,15 @@ describe("createFileSystem", () => {
 		});
 
 		setImmediate(() => writeFileSync(tmpFilePath, "data"));
-		setTimeout(() => appendFileSync(tmpFilePath, "more data"), 1500);
 
-		setTimeout(() => {
-			updatedPaths.sort();
-			expect(updatedPaths).toEqual([file1Path, file2Path, tmpFilePath, tmpFilePath]);
-			fs.stop?.();
-			done();
-		}, 3000);
+		appendFile(tmpFilePath, "more data").then(() => {
+			setImmediate(() => {
+				fs.stop?.();
+				updatedPaths.sort();
+				expect(updatedPaths).toEqual([file1Path, file2Path, tmpFilePath, tmpFilePath]);
+				done();
+			});
+		});
 	});
 
 	it("calls onRemove callback for updated files", done => {
@@ -95,8 +96,8 @@ describe("createFileSystem", () => {
 		setTimeout(() => unlinkSync(tmpFilePath), 1500);
 
 		setTimeout(() => {
-			expect(removedPaths).toEqual([tmpFilePath]);
 			fs.stop?.();
+			expect(removedPaths).toEqual([tmpFilePath]);
 			done();
 		}, 3000);
 	});
