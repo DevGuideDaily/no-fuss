@@ -17,11 +17,9 @@ Whenever a file is added or updated in the source directory, the following flow 
 
 ## Parsing
 
-The parsing algorithm is very naive, but it gets the job done for the most common use cases.
+The parsing algorithm is very naive, but it gets the job done for the most common use cases. The way it works is:
 
-The way it works is:
-
-1. It looks for anything that looks like a file path using the following regex: `/([\/\.\w-_]+\.[a-z]+)/`
+1. It tries to find anything that looks like a file path using the following regex: `/([\/\.\w-_]+\.[a-z]+)/`
 1. It resolves the path it finds based on the path of the current file, and the root path of the source folder.
 	- If the found path is absolute, it is resolved as relative to the root path of the source folder.
 	- If the found path is relative, it is resolved as relative to the directory of the current file.
@@ -52,7 +50,7 @@ This basically means that we only fingerprint paths in the output file, for whic
 
 ## Testing
 
-An important goal of this project was to ensure *100% test coverage.* To achieve this, we had to test each interaction with the file system. We must know exactly what files are being read at what time and what files with what data exactly are being written and in what order.
+An important goal of this project was to ensure *100% test coverage.* To achieve this, we had to test each interaction with the file system. We must know exactly what files are being read at what time and what files are being written and in what order.
 
 To allow for this, an abstraction over the file system was created like so:
 
@@ -90,13 +88,11 @@ export type FileSystemLogItem =
 	FileSystemRemoveLogItem;
 ```
 
-The main `pack` algorithm, which implements the above described processing takes an object which implements the `FileSystem` interface.
-
-This allows us to create 2 different implementations of the `FileSystem`
+The main `pack` algorithm, which implements the above described processing takes an object which implements the `FileSystem` interface. This allows us to create 2 different implementations of the `FileSystem`
 
 - One for testing
 - One for actual use
 
-The test file system stores all file data in memory and logs every operation such as read, write, remove... In the tests we setup the source files by writing to the test file system, and the let the `pack` algorithm run.
+The test file system stores all file data in memory and logs every operation such as *read*, *write*, *remove*... In the tests we setup the source files by writing to the test file system, and then let the `pack` algorithm run.
 
 After the pack algorithm runs, we examine the log of the file system and check that all the operations are performed on the correct paths, in the correct sequence and with the correct data.

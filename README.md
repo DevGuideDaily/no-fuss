@@ -8,7 +8,7 @@
 
 An important goal of the project is to be well documented and easy to follow for developers who are looking to learn, or to contribute.
 
-[Read the Documentation](./docs/README.md)
+[Read How It Works](./docs/README.md)
 
 ## Goals
 
