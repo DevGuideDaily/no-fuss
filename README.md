@@ -2,6 +2,8 @@
 
 # No Fuss - Static Site Builder
 
+[![DevGuideDaily](https://circleci.com/<VCS>/DevGuideDaily/no-fuss.svg?style=svg)](https://circleci.com/gh/DevGuideDaily/no-fuss)
+
 *No Fuss* is a simple static website builder, aiming to provide you with only the features you need, without any bloat. This project is part of the *Hacktober 2020* effort to contribute to open-source. Everyone is welcome to join the project.
 
 ## How It Works
