@@ -10,7 +10,7 @@ jobs:
       - node/install-packages:
           pkg-manager: yarn
       - run:
-          command: yarn test --run-in-band
+          command: yarn test --coverage && yarn coveralls < coverage/lcov.info
 workflows:
   tests:
     jobs:
