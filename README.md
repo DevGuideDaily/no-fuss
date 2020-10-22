@@ -4,17 +4,21 @@
 
 *No Fuss* is a simple static website builder, aiming to provide you with only the features you need, without any bloat. This project is part of the *Hacktober 2020* effort to contribute to open-source. Everyone is welcome to join the project.
 
+## How It Works
+
 An important goal of the project is to be well documented and easy to follow for developers who are looking to learn, or to contribute.
 
-## Feature Goals
+[Read the Documentation](./docs/README.md)
 
-- [x] Transform simple assets like pug templates or less files
-- [x] Fast and light weight - currently the package weighs only **6.3kb**.
+## Goals
+
+- [x] Transform simple assets like `pug` templates or `less` files
+- [x] Fast and light weight - currently the package weighs only **7.4kb**.
 - [x] Minimal core, pluggable architecture
 - [x] Finger print assets
 - [x] Live-reload development server
-- [x] No webpack
 - [x] No complicated frameworks
+- [x] 100% test code coverage
 
 # Usage
 
