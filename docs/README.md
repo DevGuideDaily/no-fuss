@@ -13,7 +13,9 @@ Whenever a file is added or updated in the source directory, the following flow 
 1. Compute the fingerprint of the file
 1. Save the output file to disk with the fingerprinted file name
 1. Save the mapping between the output file path and the source file path
-1. Look for other already parsed files to see if they have the current file as dependency. If yes, regenerate those files, and for each of them check other files that might have them as dependency. This phase is called `bubble up`.
+1. Look for other already parsed files to see if they have the current file as dependency. If yes, regenerate those files, and for each of them check other files that might have them as dependency. This phase is called **bubble up**.
+
+![Pack Algorithm](./assets/pack-algorithm.png)
 
 ## Parsing
 
@@ -96,3 +98,65 @@ The main `pack` algorithm, which implements the above described processing takes
 The test file system stores all file data in memory and logs every operation such as *read*, *write*, *remove*... In the tests we setup the source files by writing to the test file system, and then let the `pack` algorithm run.
 
 After the pack algorithm runs, we examine the log of the file system and check that all the operations are performed on the correct paths, in the correct sequence and with the correct data.
+
+### Chokidar Mock
+
+The file system implementation itself had to be tested as well, including the operations that touch the disc. Afterall, how can you ensure that this static site builder builds anything at all, unless you can verify that the files are being written to disk?
+
+The basic read, write and remove operations were fairly easy to test, because the `fs` module exposes the `sync` methods which are perfrect for use in the tests. However, the *watch* functionality proved to be more complicated to test.
+
+We use the `chokidar` package to watch the source folder, and it fires async events whenever a file is added, changed or removed. These events proved difficult to test reliably, because of the async nature. After trying a few different combinations of timeouts and clever tricks, the test just wouldn't reliably pass on circleci, even though they were passing locally.
+
+The solution was implement a jest mock for this module. The implementation is quite trivial, but it allows our tests to run synchronously and fast, because we can trigger the *add*, *change* and *unlink* events manually:
+
+```js
+// __mocks__/chokidar.js
+
+const chokidar = jest.createMockFromModule("chokidar");
+
+const listeners = {};
+
+chokidar.watch = () => {
+	return {
+		on: (event, callback) => listeners[event] = callback,
+		unwatch: () => listeners = {},
+		close: () => { }
+	}
+}
+
+chokidar.trigger = (event, path) => {
+	const listener = listeners[event];
+	if (listener) listener(path);
+}
+
+module.exports = chokidar;
+```
+
+Here is a sample test using this mock:
+
+```ts
+it("calls onUpdate and onRemove callback correctly", () => {
+	const fs = createFileSystem({ continuouslyWatch: true });
+	const updatedPaths: string[] = [];
+	const removedPaths: string[] = [];
+
+	fs.watch(integrationTestsFolder, {
+		onUpdate: path => updatedPaths.push(path),
+		onRemove: path => removedPaths.push(path)
+	});
+
+	//@ts-ignore
+	chokidar.trigger("add", "/added-file.txt");
+
+	//@ts-ignore
+	chokidar.trigger("change", "/changed-file.txt");
+
+	//@ts-ignore
+	chokidar.trigger("unlink", "/removed-file.txt");
+
+	expect(updatedPaths).toEqual(["/added-file.txt", "/changed-file.txt"]);
+	expect(removedPaths).toEqual(["/removed-file.txt"]);
+});
+```
+
+We had to annotate with `@ts-ignore` because the types of the `chokidar` package do not support our custom `trigger` function.

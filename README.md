@@ -8,13 +8,7 @@
 
 # No Fuss - Static Site Builder
 
-*No Fuss* is a simple static website builder, aiming to provide you with only the features you need, without any bloat. This project is part of the *Hacktober 2020* effort to contribute to open-source. Everyone is welcome to join the project.
-
-## How It Works
-
-An important goal of the project is to be well documented and easy to follow for developers who are looking to learn, or to contribute.
-
-[Read How It Works](./docs/README.md)
+*No Fuss* is a simple static website builder, aiming to provide you with only the features you need, without any bloat. This project is part of the *Hacktober 2020* effort to contribute to open-source. Everyone is welcome to join the project. [Read how it works here](./docs/README.md).
 
 ## Goals
 
@@ -25,6 +19,7 @@ An important goal of the project is to be well documented and easy to follow for
 - [x] Live-reload development server
 - [x] No complicated frameworks
 - [x] 100% test code coverage
+- [x] Great documentation.
 
 # Usage
 
