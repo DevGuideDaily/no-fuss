@@ -1,5 +1,5 @@
 import { createFileSystem, createTestFileSystem } from "./file-system";
-import { writeFileSync, unlinkSync, readFileSync, existsSync, appendFile, appendFileSync } from "fs-extra";
+import { writeFileSync, unlinkSync, readFileSync, existsSync, } from "fs";
 import { join as joinPath } from "path";
 import chokidar from "chokidar";
 
