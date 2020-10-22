@@ -13,13 +13,13 @@
 ## Goals
 
 - [x] Transform simple assets like `pug` templates or `less` files
-- [x] Fast and light weight - currently the package weighs only **7.4kb**.
+- [x] Fast and light weight - currently the package weighs only **7.4kb**
 - [x] Minimal core, pluggable architecture
-- [x] Finger print assets
+- [x] Fingerprint assets
 - [x] Live-reload development server
 - [x] No complicated frameworks
 - [x] 100% test code coverage
-- [x] Great documentation.
+- [x] Great documentation
 
 # Usage
 
