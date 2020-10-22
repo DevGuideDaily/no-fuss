@@ -2,3 +2,4 @@ node_modules
 integration-tests/cli/dist
 bin
 coverage
+yarn-error.log
