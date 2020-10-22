@@ -2,7 +2,8 @@
 
 [![DevGuideDaily](https://circleci.com/gh/DevGuideDaily/no-fuss.svg?style=shield)](https://circleci.com/gh/DevGuideDaily/no-fuss)
 [![Coverage Status](https://coveralls.io/repos/github/DevGuideDaily/no-fuss/badge.svg?branch=main)](https://coveralls.io/github/DevGuideDaily/no-fuss?branch=main)
-[![Generic badge](https://img.shields.io/badge/contributions-welcome-default.svg)](https://shields.io/)
+![Contrigutions](https://img.shields.io/badge/contributions-welcome-default.svg)
+[![License](https://img.shields.io/badge/license-MIT-default.svg)](./LICENSE)
 
 
 # No Fuss - Static Site Builder
