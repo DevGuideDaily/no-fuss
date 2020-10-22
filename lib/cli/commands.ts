@@ -26,7 +26,7 @@ export const runWatch = (passedOptions: Options) => {
 		srcDirPath: options.srcDir,
 		outDirPath: options.outDir,
 		transformers: [pugTransformer, lessTransformer],
-		fileSystem: createFileSystem({ watch: true })
+		fileSystem: createFileSystem({ continuouslyWatch: true })
 	});
 }
 

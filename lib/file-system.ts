@@ -5,18 +5,21 @@ import { Dictionary, FileData, FileSystem, FileSystemLogItem, WatchCallbacks } f
 import chokidar from "chokidar";
 
 interface CreateFileSystemParams {
-	watch?: boolean;
+	continuouslyWatch?: boolean;
 }
 
 type Watch = FileSystem["watch"];
 
-export const createFileSystem = ({ watch }: CreateFileSystemParams): FileSystem => {
+export const createFileSystem = ({
+	continuouslyWatch,
+}: CreateFileSystemParams): FileSystem => {
 	let watcher: chokidar.FSWatcher | undefined;
 	let watchPath: string | undefined;
 
-	const chokidarWatch: Watch = (dirPath, { onUpdate, onRemove }) => {
+	const continuousWatch: Watch = (dirPath, { onUpdate, onRemove }) => {
 		watchPath = joinPath(dirPath, "**", "*");
 		watcher = chokidar.watch(watchPath);
+
 		watcher.on("add", path => onUpdate(resolvePath(path)))
 		watcher.on("change", path => onUpdate(resolvePath(path)))
 		watcher.on("unlink", path => onRemove(resolvePath(path)))
@@ -34,7 +37,7 @@ export const createFileSystem = ({ watch }: CreateFileSystemParams): FileSystem 
 		readBinary: path => readFileSync(path),
 		write: (path, data) => outputFileSync(path, data),
 		remove: path => removeSync(path),
-		watch: watch ? chokidarWatch : listWatch,
+		watch: continuouslyWatch ? continuousWatch : listWatch,
 		stop: () => {
 			if (!watcher || !watchPath) return;
 			watcher.unwatch(watchPath);

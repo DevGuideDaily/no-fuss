@@ -1,9 +1,11 @@
 import { createFileSystem, createTestFileSystem } from "./file-system";
-import { writeFileSync, unlinkSync, readFileSync, existsSync, appendFile } from "fs-extra";
+import { writeFileSync, unlinkSync, readFileSync, existsSync, appendFile, appendFileSync } from "fs-extra";
 import { join as joinPath } from "path";
 
 
 describe("createFileSystem", () => {
+	jest.setTimeout(30000);
+
 	const integrationTestsFolder = joinPath(__dirname, "../integration-tests/file-system");
 	const file1Path = joinPath(integrationTestsFolder, "file-1.txt");
 	const file2Path = joinPath(integrationTestsFolder, "file-2.txt");
@@ -63,43 +65,42 @@ describe("createFileSystem", () => {
 	});
 
 	it("calls onUpdate callback for updated files", done => {
-		const fs = createFileSystem({ watch: true });
-		const updatedPaths: string[] = [];
+		const fs = createFileSystem({ continuouslyWatch: true });
 
+		const updatedPaths: string[] = [];
 		fs.watch(integrationTestsFolder, {
 			onUpdate: path => updatedPaths.push(path),
 			onRemove: () => { }
 		});
 
 		setImmediate(() => writeFileSync(tmpFilePath, "data"));
+		setTimeout(() => appendFileSync(tmpFilePath, "more data"), 5000);
 
-		appendFile(tmpFilePath, "more data").then(() => {
-			setImmediate(() => {
-				fs.stop?.();
-				updatedPaths.sort();
-				expect(updatedPaths).toEqual([file1Path, file2Path, tmpFilePath, tmpFilePath]);
-				done();
-			});
-		});
+		setTimeout(() => {
+			fs.stop?.();
+			updatedPaths.sort();
+			expect(updatedPaths).toEqual([file1Path, file2Path, tmpFilePath, tmpFilePath]);
+			done();
+		}, 10000);
 	});
 
 	it("calls onRemove callback for updated files", done => {
-		const fs = createFileSystem({ watch: true });
-		const removedPaths: string[] = [];
+		const fs = createFileSystem({ continuouslyWatch: true });
 
+		const removedPaths: string[] = [];
 		fs.watch(integrationTestsFolder, {
 			onUpdate: () => { },
 			onRemove: path => removedPaths.push(path)
 		});
 
 		setImmediate(() => writeFileSync(tmpFilePath, "data"));
-		setTimeout(() => unlinkSync(tmpFilePath), 1500);
+		setTimeout(() => unlinkSync(tmpFilePath), 1000);
 
 		setTimeout(() => {
 			fs.stop?.();
 			expect(removedPaths).toEqual([tmpFilePath]);
 			done();
-		}, 3000);
+		}, 2000);
 	});
 
 	it("doesn't throw if stop is called without watch", () => {
