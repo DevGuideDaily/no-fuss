@@ -73,8 +73,8 @@ describe("createFileSystem", () => {
 		});
 
 		setImmediate(() => writeFileSync(tmpFilePath, ""));
-		setTimeout(() => appendFileSync(tmpFilePath, "Some data"), 500);
-		setTimeout(() => unlinkSync(tmpFilePath), 1000);
+		setTimeout(() => appendFileSync(tmpFilePath, "Some data"), 1000);
+		setTimeout(() => unlinkSync(tmpFilePath), 2000);
 
 		setTimeout(() => {
 			expect(removedPaths).toEqual([tmpFilePath]);
@@ -82,7 +82,7 @@ describe("createFileSystem", () => {
 			expect(updatedPaths).toEqual([file1Path, file2Path, tmpFilePath, tmpFilePath]);
 			fs.stop?.();
 			done();
-		}, 2000);
+		}, 3000);
 	});
 
 	it("doesn't throw if stop is called without watch", () => {
