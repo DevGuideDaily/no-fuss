@@ -7,8 +7,8 @@ interface PackParams {
 	srcDirPath: string;
 	outDirPath: string;
 	fileSystem: FileSystem;
+	transformers: Transformer[];
 	parseExtensions?: string[];
-	transformers?: Transformer[];
 	hashFileData?: HashFileData;
 	callbacks?: {
 		onBubbleUpFinished?: () => void;
@@ -20,7 +20,7 @@ export const pack = ({
 	outDirPath,
 	fileSystem,
 	parseExtensions = parsableExtensions,
-	transformers = [],
+	transformers,
 	hashFileData,
 	callbacks = {}
 }: PackParams) => {
@@ -51,7 +51,7 @@ export const pack = ({
 
 		if (parsedFileAfterTrans) {
 			parsedFilesAfterTransMap[absSrcFilePath] = parsedFileAfterTrans;
-			generateParsedFileOutput(absSrcFilePath);
+			generateParsedFileOutput(absSrcFilePath, parsedFileAfterTrans);
 		} else if (transformResult) {
 			const { ext, data } = transformResult;
 			fingerPrint(absSrcFilePath, ext, data);
@@ -109,10 +109,7 @@ export const pack = ({
 			part.absFilePath === absSrcChildPath);
 	}
 
-	const generateParsedFileOutput = (absSrcFilePath: string) => {
-		const parsedFile = parsedFilesAfterTransMap[absSrcFilePath];
-		if (!parsedFile) return false;
-
+	const generateParsedFileOutput = (absSrcFilePath: string, parsedFile: ParsedFile) => {
 		const outputData = generateOutputData(parsedFile);
 		fingerPrint(absSrcFilePath, parsedFile.ext, outputData);
 

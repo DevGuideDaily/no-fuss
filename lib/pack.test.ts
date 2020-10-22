@@ -95,6 +95,36 @@ describe("pack", () => {
 
 			fileSystem.write("/src/file.pug", "h1 Hello World");
 		});
+
+		it("doesn't output anything if the result of transform is empty", done => {
+			const expectedOperations = [
+				{ write: "/src/file.pug", data: "" },
+				{ read: "/src/file.pug" },
+				{ write: "/tmp", data: "" },
+			];
+
+			const fileSystem = createTestFileSystem({
+				expectedCount: expectedOperations.length,
+				onFinish: log => {
+					expect(log).toEqual(expectedOperations);
+					done();
+				}
+			});
+
+			pack({
+				fileSystem,
+				outDirPath: "/out",
+				srcDirPath: "/src",
+				transformers: [pugTransformer],
+				callbacks: {
+					onBubbleUpFinished: seq(
+						() => fileSystem.write("/tmp", "")
+					)
+				}
+			});
+
+			fileSystem.write("/src/file.pug", "")
+		});
 	});
 
 	describe("with two dependent files", () => {
