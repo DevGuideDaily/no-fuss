@@ -66,6 +66,7 @@ describe("pack", () => {
 				{ write: "/out/file.html", data: "<h1>Hello World</h1>" },
 				{ write: "/src/file.pug", data: "h1 Updated" },
 				{ read: "/src/file.pug" },
+				{ remove: "/out/file.html" },
 				{ write: "/out/file.html", data: "<h1>Updated</h1>" },
 			];
 
@@ -174,6 +175,7 @@ describe("pack", () => {
 				{ read: imagePath },
 				{ write: "/out/image.hash.jpg", data: Buffer.from(imageData) },
 				{ read: pagePath },
+				{ remove: "/out/page.html" },
 				{ write: "/out/page.html", data: '<img src="/image.hash.jpg"/>' },
 			];
 
@@ -248,8 +250,10 @@ describe("pack", () => {
 
 				{ write: imagePath, data: updatedImageData },
 				{ read: imagePath },
+				{ remove: "/out/image.hash.jpg" },
 				{ write: "/out/image.hash.jpg", data: Buffer.from(updatedImageData) },
 				{ read: pagePath },
+				{ remove: "/out/page.html" },
 				{ write: "/out/page.html", data: '<img src="/image.hash.jpg"/>' },
 			];
 
@@ -290,6 +294,7 @@ describe("pack", () => {
 				{ remove: imagePath },
 				{ remove: "/out/image.hash.jpg" },
 				{ read: pagePath },
+				{ remove: "/out/page.html" },
 				{ write: "/out/page.html", data: '<img src="image.jpg"/>' },
 			];
 
@@ -331,10 +336,12 @@ describe("pack", () => {
 
 				{ write: pagePath, data: updatedPageData },
 				{ read: pagePath },
+				{ remove: "/out/page.html" },
 				{ write: "/out/page.html", data: "<p>Hello World</p>" },
 
 				{ write: pagePath, data: pageData },
 				{ read: pagePath },
+				{ remove: "/out/page.html" },
 				{ write: "/out/page.html", data: '<img src="/image.hash.jpg"/>' },
 
 				{ write: tmpFilePath, data: tmpFileData },
@@ -424,8 +431,10 @@ describe("pack", () => {
 
 					{ write: imagePath, data: updatedImageData },
 					{ read: imagePath },
+					{ remove: "/out/image.hash.jpg" },
 					{ write: "/out/image.hash.jpg", data: Buffer.from(updatedImageData) },
 					{ read: pagePath },
+					{ remove: "/out/page.html" },
 					{ write: "/out/page.html", data: '<img src="image.jpg"/>' },
 				];
 
@@ -468,6 +477,7 @@ describe("pack", () => {
 					{ remove: imagePath },
 					{ remove: "/out/image.hash.jpg" },
 					{ read: pagePath },
+					{ remove: "/out/page.html" },
 					{ write: "/out/page.html", data: '<img src="image.jpg"/>' },
 				];
 
@@ -520,8 +530,10 @@ describe("pack", () => {
 
 					{ write: imagePath, data: updatedImageData },
 					{ read: imagePath },
+					{ remove: "/out/image.hash.jpg" },
 					{ write: "/out/image.hash.jpg", data: Buffer.from(updatedImageData) },
 					{ read: pagePath },
+					{ remove: "/out/page.html" },
 					{ write: "/out/page.html", data: dummyData },
 				];
 
@@ -562,6 +574,7 @@ describe("pack", () => {
 					{ remove: imagePath },
 					{ remove: "/out/image.hash.jpg" },
 					{ read: pagePath },
+					{ remove: "/out/page.html" },
 					{ write: "/out/page.html", data: dummyData },
 				];
 

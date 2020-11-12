@@ -142,6 +142,7 @@ export const pack = ({
 
 	const fingerPrint = (absSrcFilePath: string, outExt: string, fileData: FileData) => {
 		if (fileData.length === 0) return;
+		cleanUpOutFile(absSrcFilePath);
 		outFilePathsMap[absSrcFilePath] = fingerPrintFile({
 			fileData,
 			absSrcDirPath,
