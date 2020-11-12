@@ -2,7 +2,7 @@ import { FileData, FileSystem, HashFileData } from "./types";
 import { createHash } from "crypto";
 import { parse as parsePath, join as joinPath, relative as getRelativePath } from "path";
 
-const defaultSkip = [
+const defaultNoHash = [
 	/\.html/,
 	/\.pug/
 ];
@@ -17,7 +17,7 @@ interface FingerPrintFileParams {
 	absOutDirPath: string;
 	fileSystem: FileSystem;
 	hashFileData?: HashFileData,
-	skip?: RegExp[];
+	noHash?: RegExp[];
 }
 
 export const fingerPrintFile = ({
@@ -28,9 +28,9 @@ export const fingerPrintFile = ({
 	absOutDirPath,
 	fileSystem,
 	hashFileData = hashFileDataMD5,
-	skip = defaultSkip
+	noHash = defaultNoHash
 }: FingerPrintFileParams) => {
-	const hash = getFileHash({ absSrcFilePath, skip, fileData, hashFileData });
+	const hash = getFileHash({ absSrcFilePath, noHash, fileData, hashFileData });
 	const relativePath = getRelativePath(absSrcDirPath, absSrcFilePath);
 	const { dir: relativeDir } = parsePath(relativePath);
 	const { name } = parsePath(absSrcFilePath);
@@ -41,18 +41,18 @@ export const fingerPrintFile = ({
 
 interface GetFileHashParams {
 	absSrcFilePath: string;
-	skip: RegExp[];
+	noHash: RegExp[];
 	fileData: FileData;
 	hashFileData: HashFileData;
 }
 
 const getFileHash = ({
 	absSrcFilePath,
-	skip,
+	noHash,
 	fileData,
 	hashFileData
 }: GetFileHashParams) => {
-	const shouldSkip = skip.some(regex => regex.test(absSrcFilePath));
+	const shouldSkip = noHash.some(regex => regex.test(absSrcFilePath));
 	return shouldSkip ? "" : `.${hashFileData(fileData).slice(0, hashLength)}`;
 }
 

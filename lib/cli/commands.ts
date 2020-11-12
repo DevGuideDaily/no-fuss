@@ -4,58 +4,79 @@ import { lessTransformer } from "../transformers/less";
 import { pugTransformer } from "../transformers/pug";
 import { startServer } from "./server";
 import { removeSync } from "fs-extra";
+import { Transformer } from "../types";
+import { existsSync } from "fs-extra";
+import { join } from "path";
 
-interface Options {
+interface PackOptions {
 	srcDir?: string;
 	outDir?: string;
 }
 
-const resolveOptions = ({ srcDir, outDir }: Options): Required<Options> => {
-	return {
-		srcDir: srcDir ?? "src",
-		outDir: outDir ?? "dist"
+interface CustomizablePackParams {
+	srcDirPath: string,
+	outDirPath: string,
+	ignore: RegExp[],
+	noHash: RegExp[],
+	transformers: Transformer[]
+}
+
+interface ServeOptions extends PackOptions {
+	port?: string;
+}
+
+interface ServeParams extends CustomizablePackParams {
+	port: string;
+}
+
+const loadConfigFile = () => {
+	const path = join(process.cwd(), "no-fuss.config.js");
+	if (existsSync(path)) {
+		const config = require(path);
+		return config as Partial<CustomizablePackParams>;
 	}
 }
 
-export const runWatch = (passedOptions: Options) => {
-	const options = resolveOptions(passedOptions);
-	console.log(`✅ Watching files ${options.srcDir}  ⮕  ${options.outDir}`);
-
-	removeSync(options.outDir);
-	pack({
-		srcDirPath: options.srcDir,
-		outDirPath: options.outDir,
+const resolvePartialPackParams = ({ srcDir, outDir }: PackOptions): CustomizablePackParams => {
+	return {
+		srcDirPath: srcDir ?? "src",
+		outDirPath: outDir ?? "dist",
+		ignore: [/\.DS_Store/i],
+		noHash: [],
 		transformers: [pugTransformer, lessTransformer],
+		...loadConfigFile()
+	}
+}
+
+export const runWatch = (passedOptions: PackOptions) => {
+	const packParams = resolvePartialPackParams(passedOptions);
+	console.log(`✅ Watching files ${packParams.srcDirPath}  ⮕  ${packParams.outDirPath}`);
+	removeSync(packParams.outDirPath);
+	pack({
+		...packParams,
 		fileSystem: createFileSystem({ continuouslyWatch: true })
 	});
 }
 
-export const runBuild = (passedOptions: Options) => {
-	const options = resolveOptions(passedOptions);
-	removeSync(options.outDir);
+export const runBuild = (passedOptions: PackOptions) => {
+	const packParams = resolvePartialPackParams(passedOptions);
+	removeSync(packParams.outDirPath);
 	pack({
-		srcDirPath: options.srcDir,
-		outDirPath: options.outDir,
-		transformers: [pugTransformer, lessTransformer],
+		...packParams,
 		fileSystem: createFileSystem({})
 	});
 	console.log(`✅ Done!\n`);
 }
 
-interface ServeOptions extends Options {
-	port?: string;
-}
-
-
-const resolveServeOptions = (options: ServeOptions): Required<ServeOptions> => {
+const resolveServeOptions = (options: ServeOptions): Required<ServeParams> => {
 	return {
-		...resolveOptions(options),
+		...resolvePartialPackParams(options),
 		port: options.port ?? "5000"
 	};
 }
 
 export const runServe = (passedOptions: ServeOptions) => {
-	const options = resolveServeOptions(passedOptions);
-	runWatch(options);
-	startServer(options);
+	const params = resolveServeOptions(passedOptions);
+	runWatch(passedOptions);
+	startServer(params);
 }

@@ -31,6 +31,34 @@ describe("pack", () => {
 			fileSystem.write("/src/file.pug", "h1 Hello World")
 		});
 
+		it("ignores files that match the ignore regex", done => {
+			const expectedOperations = [
+				{ write: "/src/file.pug", data: "h1 Hello World" },
+				{ write: "/src/ignored.pug", data: "h1 Hello World" },
+				{ read: "/src/file.pug" },
+				{ write: "/out/file.html", data: "<h1>Hello World</h1>" },
+			];
+
+			const fileSystem = createTestFileSystem({
+				expectedCount: expectedOperations.length,
+				onFinish: log => {
+					expect(log).toEqual(expectedOperations);
+					done();
+				}
+			});
+
+			pack({
+				fileSystem,
+				outDirPath: "/out",
+				srcDirPath: "/src",
+				ignore: [/ignored/],
+				transformers: [pugTransformer]
+			});
+
+			fileSystem.write("/src/file.pug", "h1 Hello World");
+			fileSystem.write("/src/ignored.pug", "h1 Hello World");
+		});
+
 		it("updates the output if source is updated", done => {
 			const expectedOperations = [
 				{ write: "/src/file.pug", data: "h1 Hello World" },

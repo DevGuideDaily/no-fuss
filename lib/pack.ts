@@ -8,6 +8,8 @@ interface PackParams {
 	outDirPath: string;
 	fileSystem: FileSystem;
 	transformers: Transformer[];
+	ignore?: RegExp[];
+	noHash?: RegExp[];
 	parseExtensions?: string[];
 	hashFileData?: HashFileData;
 	callbacks?: {
@@ -19,6 +21,8 @@ export const pack = ({
 	srcDirPath,
 	outDirPath,
 	fileSystem,
+	ignore = [],
+	noHash,
 	parseExtensions = parsableExtensions,
 	transformers,
 	hashFileData,
@@ -35,6 +39,7 @@ export const pack = ({
 		transformersMap[transformer.srcExt] = transformer;
 
 	const processSrcFile = async (absSrcFilePath: string) => {
+		if (ignore.some(regex => regex.test(absSrcFilePath))) return;
 		await transformAndOutput(absSrcFilePath);
 		await bubbleUp(absSrcFilePath);
 	}
@@ -143,6 +148,7 @@ export const pack = ({
 			absSrcFilePath,
 			outExt,
 			absOutDirPath,
+			noHash,
 			hashFileData,
 			fileSystem
 		});
