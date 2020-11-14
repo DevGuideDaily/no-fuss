@@ -237,6 +237,43 @@ describe("pack", () => {
 			fileSystem.write(imagePath, imageData);
 		});
 
+		it("generates correct output whith fully qualified url", done => {
+			const pageData = 'img(src="$/image.jpg")';
+
+			const expectedOperations = [
+				{ write: imagePath, data: imageData },
+				{ read: imagePath },
+				{ write: "/out/image.hash.jpg", data: Buffer.from(imageData) },
+				{ write: pagePath, data: pageData },
+				{ read: pagePath },
+				{ write: "/out/page.html", data: '<img src="https://example.com/image.hash.jpg"/>' },
+			];
+
+			const fileSystem = createTestFileSystem({
+				expectedCount: expectedOperations.length,
+				onFinish: log => {
+					expect(log).toEqual(expectedOperations);
+					done();
+				}
+			});
+
+			pack({
+				fileSystem,
+				outDirPath: "/out",
+				srcDirPath: "/src",
+				transformers: [pugTransformer],
+				hashFileData: () => "hash",
+				fullyQualifiedUrl: "https://example.com",
+				callbacks: {
+					onBubbleUpFinished: seq(
+						() => fileSystem.write(pagePath, pageData)
+					)
+				}
+			});
+
+			fileSystem.write(imagePath, imageData);
+		});
+
 		it("regenerates the parent when child is updated", done => {
 			const updatedImageData = "Updated Image Data";
 

@@ -1,7 +1,7 @@
 import { join as joinPath, parse as parsePath } from "path";
 import { ParsedFile, ParsedFilePart } from "./types";
 
-const filePathRegex = /([\/\.\w-_]+\.[a-z]+)/
+const filePathRegex = /([\$\/\.\w-_]+\.[a-z]+)/
 
 export const parsableExtensions = [
 	".pug",
@@ -10,6 +10,8 @@ export const parsableExtensions = [
 	".css",
 	".webmanifest"
 ];
+
+export const fullyQualifiedPrefix = "$/";
 
 export const canParse = (ext: string, parsable: string[]) =>
 	parsable.includes(ext);
@@ -62,7 +64,9 @@ const getParsedPart = ({
 }
 
 const getAbsChildPath = (absSrcDirPath: string, absParentPath: string, childUrl: string) => {
-	if (childUrl.startsWith("/")) {
+	if (childUrl.startsWith(fullyQualifiedPrefix)) {
+		return joinPath(absSrcDirPath, childUrl.slice(fullyQualifiedPrefix.length - 1))
+	} else if (childUrl.startsWith("/")) {
 		return joinPath(absSrcDirPath, childUrl);
 	} else {
 		const { dir } = parsePath(absParentPath);

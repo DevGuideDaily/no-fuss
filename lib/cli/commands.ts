@@ -14,11 +14,12 @@ interface PackOptions {
 }
 
 interface CustomizablePackParams {
-	srcDirPath: string,
-	outDirPath: string,
-	ignore: RegExp[],
-	noHash: RegExp[],
-	transformers: Transformer[]
+	srcDirPath: string;
+	outDirPath: string;
+	ignore: RegExp[];
+	noHash: RegExp[];
+	transformers: Transformer[];
+	fullyQualifiedUrl: string;
 }
 
 interface ServeOptions extends PackOptions {
@@ -44,6 +45,7 @@ const resolvePartialPackParams = ({ srcDir, outDir }: PackOptions): Customizable
 		ignore: [/\.DS_Store/i],
 		noHash: [],
 		transformers: [pugTransformer, lessTransformer],
+		fullyQualifiedUrl: "",
 		...loadConfigFile()
 	}
 }

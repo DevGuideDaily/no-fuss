@@ -1,7 +1,7 @@
 import { fingerPrintFile } from "./finger-print";
 import { Dictionary, FileData, FileSystem, HashFileData, ParsedFile, ParsedFilePart, Transformer, TransformResult } from "./types";
 import { resolve as resolvePath, parse as parsePath, relative as getRelatvePath } from "path";
-import { canParse, parse, parsableExtensions } from "./parse";
+import { canParse, parse, parsableExtensions, fullyQualifiedPrefix } from "./parse";
 
 interface PackParams {
 	srcDirPath: string;
@@ -12,6 +12,7 @@ interface PackParams {
 	noHash?: RegExp[];
 	parseExtensions?: string[];
 	hashFileData?: HashFileData;
+	fullyQualifiedUrl?: string;
 	callbacks?: {
 		onBubbleUpFinished?: () => void;
 	};
@@ -26,6 +27,7 @@ export const pack = ({
 	parseExtensions = parsableExtensions,
 	transformers,
 	hashFileData,
+	fullyQualifiedUrl = "",
 	callbacks = {}
 }: PackParams) => {
 	const absSrcDirPath = resolvePath(srcDirPath);
@@ -117,8 +119,6 @@ export const pack = ({
 	const generateParsedFileOutput = (absSrcFilePath: string, parsedFile: ParsedFile) => {
 		const outputData = generateOutputData(parsedFile);
 		fingerPrint(absSrcFilePath, parsedFile.ext, outputData);
-
-		return true;
 	}
 
 	const generateOutputData = ({ parts }: ParsedFile) => {
@@ -131,13 +131,18 @@ export const pack = ({
 		} else {
 			const absOutFilePath = outFilePathsMap[part.absFilePath];
 			if (!absOutFilePath) return part.originalPath;
-			return getOutFileUrl(absOutFilePath);
+			return getOutFileUrl(absOutFilePath, part.originalPath);
 		}
 	}
 
-	const getOutFileUrl = (absOutFilePath: string) => {
+	const getOutFileUrl = (absOutFilePath: string, originalPath: string) => {
 		const relativePath = getRelatvePath(absOutDirPath, absOutFilePath);
-		return `/${relativePath}`;
+		const absolutePath = `/${relativePath}`;
+		if (originalPath.startsWith(fullyQualifiedPrefix)) {
+			return `${fullyQualifiedUrl}${absolutePath}`;
+		} else {
+			return absolutePath;
+		}
 	}
 
 	const fingerPrint = (absSrcFilePath: string, outExt: string, fileData: FileData) => {
