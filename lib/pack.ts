@@ -9,7 +9,7 @@ interface PackParams {
 	fileSystem: FileSystem;
 	transformers: Transformer[];
 	ignore?: RegExp[];
-	noHash?: RegExp[];
+	noHash: RegExp[];
 	parseExtensions?: string[];
 	hashFileData?: HashFileData;
 	fullyQualifiedUrl?: string;

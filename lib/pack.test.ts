@@ -4,6 +4,8 @@ import { pugTransformer } from "./transformers/pug";
 import { seq } from "./test-helpers";
 import { Transformer } from "./types";
 
+const noHash = [/\.html/, /\.pug/];
+
 describe("pack", () => {
 	describe("with only one file", () => {
 		it("simply transforms and writes to output", done => {
@@ -25,6 +27,7 @@ describe("pack", () => {
 				fileSystem,
 				outDirPath: "/out",
 				srcDirPath: "/src",
+				noHash,
 				transformers: [pugTransformer]
 			});
 
@@ -52,6 +55,7 @@ describe("pack", () => {
 				outDirPath: "/out",
 				srcDirPath: "/src",
 				ignore: [/ignored/],
+				noHash,
 				transformers: [pugTransformer]
 			});
 
@@ -82,6 +86,7 @@ describe("pack", () => {
 				fileSystem,
 				outDirPath: "/out",
 				srcDirPath: "/src",
+				noHash,
 				transformers: [pugTransformer],
 				callbacks: {
 					onBubbleUpFinished: seq(
@@ -114,6 +119,7 @@ describe("pack", () => {
 				fileSystem,
 				outDirPath: "/out",
 				srcDirPath: "/src",
+				noHash,
 				transformers: [pugTransformer],
 				callbacks: {
 					onBubbleUpFinished: seq(
@@ -144,6 +150,7 @@ describe("pack", () => {
 				fileSystem,
 				outDirPath: "/out",
 				srcDirPath: "/src",
+				noHash,
 				transformers: [pugTransformer],
 				callbacks: {
 					onBubbleUpFinished: seq(
@@ -191,6 +198,7 @@ describe("pack", () => {
 				fileSystem,
 				outDirPath: "/out",
 				srcDirPath: "/src",
+				noHash,
 				transformers: [pugTransformer],
 				hashFileData: () => "hash",
 				callbacks: {
@@ -225,6 +233,7 @@ describe("pack", () => {
 				fileSystem,
 				outDirPath: "/out",
 				srcDirPath: "/src",
+				noHash,
 				transformers: [pugTransformer],
 				hashFileData: () => "hash",
 				callbacks: {
@@ -237,7 +246,7 @@ describe("pack", () => {
 			fileSystem.write(imagePath, imageData);
 		});
 
-		it("generates correct output whith fully qualified url", done => {
+		it("generates correct output with fully qualified url", done => {
 			const pageData = 'img(src="$/image.jpg")';
 
 			const expectedOperations = [
@@ -261,6 +270,7 @@ describe("pack", () => {
 				fileSystem,
 				outDirPath: "/out",
 				srcDirPath: "/src",
+				noHash,
 				transformers: [pugTransformer],
 				hashFileData: () => "hash",
 				fullyQualifiedUrl: "https://example.com",
@@ -306,6 +316,7 @@ describe("pack", () => {
 				fileSystem,
 				outDirPath: "/out",
 				srcDirPath: "/src",
+				noHash,
 				transformers: [pugTransformer],
 				hashFileData: () => "hash",
 				callbacks: {
@@ -347,6 +358,7 @@ describe("pack", () => {
 				fileSystem,
 				outDirPath: "/out",
 				srcDirPath: "/src",
+				noHash,
 				transformers: [pugTransformer],
 				hashFileData: () => "hash",
 				callbacks: {
@@ -396,6 +408,7 @@ describe("pack", () => {
 				fileSystem,
 				outDirPath: "/out",
 				srcDirPath: "/src",
+				noHash,
 				transformers: [pugTransformer],
 				hashFileData: () => "hash",
 				callbacks: {
@@ -438,6 +451,7 @@ describe("pack", () => {
 				fileSystem,
 				outDirPath: "/out",
 				srcDirPath: "/src",
+				noHash,
 				transformers: [pugTransformer],
 				hashFileData: () => "hash",
 				callbacks: {
@@ -488,6 +502,7 @@ describe("pack", () => {
 					outDirPath: "/out",
 					srcDirPath: "/src",
 					parseExtensions,
+					noHash,
 					transformers: [pugTransformer],
 					hashFileData: () => "hash",
 					callbacks: {
@@ -531,6 +546,7 @@ describe("pack", () => {
 					outDirPath: "/out",
 					srcDirPath: "/src",
 					parseExtensions,
+					noHash,
 					transformers: [pugTransformer],
 					hashFileData: () => "hash",
 					callbacks: {
@@ -586,6 +602,7 @@ describe("pack", () => {
 					fileSystem,
 					outDirPath: "/out",
 					srcDirPath: "/src",
+					noHash,
 					transformers: [dummyTransformer],
 					hashFileData: () => "hash",
 					callbacks: {
@@ -627,6 +644,7 @@ describe("pack", () => {
 					fileSystem,
 					outDirPath: "/out",
 					srcDirPath: "/src",
+					noHash,
 					transformers: [dummyTransformer],
 					hashFileData: () => "hash",
 					callbacks: {

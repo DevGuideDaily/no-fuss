@@ -2,11 +2,6 @@ import { FileData, FileSystem, HashFileData } from "./types";
 import { createHash } from "crypto";
 import { parse as parsePath, join as joinPath, relative as getRelativePath } from "path";
 
-const defaultNoHash = [
-	/\.html/,
-	/\.pug/
-];
-
 const hashLength = 8;
 
 interface FingerPrintFileParams {
@@ -17,7 +12,7 @@ interface FingerPrintFileParams {
 	absOutDirPath: string;
 	fileSystem: FileSystem;
 	hashFileData?: HashFileData,
-	noHash?: RegExp[];
+	noHash: RegExp[];
 }
 
 export const fingerPrintFile = ({
@@ -28,7 +23,7 @@ export const fingerPrintFile = ({
 	absOutDirPath,
 	fileSystem,
 	hashFileData = hashFileDataMD5,
-	noHash = defaultNoHash
+	noHash
 }: FingerPrintFileParams) => {
 	const hash = getFileHash({ absSrcFilePath, noHash, fileData, hashFileData });
 	const relativePath = getRelativePath(absSrcDirPath, absSrcFilePath);

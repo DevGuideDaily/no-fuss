@@ -43,7 +43,7 @@ const resolvePartialPackParams = ({ srcDir, outDir }: PackOptions): Customizable
 		srcDirPath: srcDir ?? "src",
 		outDirPath: outDir ?? "dist",
 		ignore: [/\.DS_Store/i],
-		noHash: [],
+		noHash: [/\.html/, /\.pug/],
 		transformers: [pugTransformer, lessTransformer],
 		fullyQualifiedUrl: "",
 		...loadConfigFile()

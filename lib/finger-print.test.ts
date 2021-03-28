@@ -2,6 +2,8 @@ import { fingerPrintFile } from "./finger-print";
 import { createHash } from "crypto";
 import { createTestFileSystem } from "./file-system";
 
+const noHash = [/\.html/, /\.pug/];
+
 describe("fingerPrintFile", () => {
 	it("adds the hash to the file name", done => {
 		const fileSystem = createTestFileSystem({
@@ -29,6 +31,7 @@ describe("fingerPrintFile", () => {
 			absSrcFilePath: "/src/folder/file.ie",
 			absOutDirPath: "/out",
 			outExt: ".oe",
+			noHash,
 			fileSystem
 		});
 	});
