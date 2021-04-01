@@ -9,6 +9,7 @@ interface PackParams {
 	fileSystem: FileSystem;
 	transformers: Transformer[];
 	ignore?: RegExp[];
+	noOutput?: RegExp[];
 	noHash: RegExp[];
 	parseExtensions?: string[];
 	hashFileData?: HashFileData;
@@ -23,6 +24,7 @@ export const pack = ({
 	outDirPath,
 	fileSystem,
 	ignore = [],
+	noOutput = [],
 	noHash,
 	parseExtensions = parsableExtensions,
 	transformers,
@@ -40,8 +42,11 @@ export const pack = ({
 	for (const transformer of transformers)
 		transformersMap[transformer.srcExt] = transformer;
 
+	const matchesRegex = (path: string, regExps: RegExp[]) =>
+		regExps.some(reg => reg.test(path))
+
 	const processSrcFile = async (absSrcFilePath: string) => {
-		if (ignore.some(regex => regex.test(absSrcFilePath))) return;
+		if (matchesRegex(absSrcFilePath, ignore)) return;
 		await transformAndOutput(absSrcFilePath);
 		await bubbleUp(absSrcFilePath);
 	}
@@ -148,6 +153,7 @@ export const pack = ({
 	const fingerPrint = (absSrcFilePath: string, outExt: string, fileData: FileData) => {
 		if (fileData.length === 0) return;
 		cleanUpOutFile(absSrcFilePath);
+		if (matchesRegex(absSrcFilePath, noOutput)) return;
 		outFilePathsMap[absSrcFilePath] = fingerPrintFile({
 			fileData,
 			absSrcDirPath,

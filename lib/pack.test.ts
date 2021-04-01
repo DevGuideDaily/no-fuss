@@ -372,6 +372,50 @@ describe("pack", () => {
 			fileSystem.write(imagePath, imageData);
 		});
 
+		it("regenerates the parent when no output child is updated", done => {
+			const updatedImageData = "Updated Image Data";
+
+			const expectedOperations = [
+				{ write: imagePath, data: imageData },
+				{ read: imagePath },
+				{ write: pagePath, data: pageData },
+				{ read: pagePath },
+				{ write: "/out/page.html", data: '<img src="image.jpg"/>' },
+
+				{ write: imagePath, data: updatedImageData },
+				{ read: imagePath },
+				{ read: pagePath },
+				{ remove: "/out/page.html" },
+				{ write: "/out/page.html", data: '<img src="image.jpg"/>' },
+			];
+
+			const fileSystem = createTestFileSystem({
+				expectedCount: expectedOperations.length,
+				onFinish: log => {
+					expect(log).toEqual(expectedOperations);
+					done();
+				}
+			});
+
+			pack({
+				fileSystem,
+				outDirPath: "/out",
+				srcDirPath: "/src",
+				noHash,
+				noOutput: [/image/],
+				transformers: [pugTransformer],
+				hashFileData: () => "hash",
+				callbacks: {
+					onBubbleUpFinished: seq(
+						() => fileSystem.write(pagePath, pageData),
+						() => fileSystem.write(imagePath, updatedImageData)
+					)
+				}
+			});
+
+			fileSystem.write(imagePath, imageData);
+		});
+
 		it("doesn't regenerate child when parent is updated", done => {
 			const updatedPageData = "p Hello World"
 
