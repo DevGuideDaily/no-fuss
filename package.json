@@ -14,6 +14,7 @@
 	},
 	"scripts": {
 		"prepublishOnly": "rm -rf bin && tsc",
+		"link-local": "npm remove -g no-fuss && npm run prepublishOnly && npm link",
 		"test": "jest"
 	},
 	"dependencies": {
