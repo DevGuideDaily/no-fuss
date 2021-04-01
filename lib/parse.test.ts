@@ -75,4 +75,24 @@ describe("parse", () => {
 			'">PDF</a>'
 		]);
 	});
+
+	it("supports relative paths with a fully qualified prefix", () => {
+		const data = '<a href="$./documents/abs-doc.pdf">PDF</a>';
+
+		const { parts } = parse({
+			absSrcFilePath: "/src/file.html",
+			absSrcDirPath: "/src",
+			data,
+			ext: ".html"
+		});
+
+		expect(parts).toEqual([
+			'<a href="',
+			{
+				originalPath: "$./documents/abs-doc.pdf",
+				absFilePath: "/src/documents/abs-doc.pdf"
+			},
+			'">PDF</a>'
+		]);
+	});
 });

@@ -11,7 +11,7 @@ export const parsableExtensions = [
 	".webmanifest"
 ];
 
-export const fullyQualifiedPrefix = "$/";
+export const fullyQualifiedPrefix = "$";
 
 export const canParse = (ext: string, parsable: string[]) =>
 	parsable.includes(ext);
@@ -64,12 +64,13 @@ const getParsedPart = ({
 }
 
 const getAbsChildPath = (absSrcDirPath: string, absParentPath: string, childUrl: string) => {
-	if (childUrl.startsWith(fullyQualifiedPrefix)) {
-		return joinPath(absSrcDirPath, childUrl.slice(fullyQualifiedPrefix.length - 1))
-	} else if (childUrl.startsWith("/")) {
-		return joinPath(absSrcDirPath, childUrl);
+	let slicedChildUrl = childUrl.startsWith(fullyQualifiedPrefix) ?
+		childUrl.slice(fullyQualifiedPrefix.length) : childUrl;
+
+	if (slicedChildUrl.startsWith("/")) {
+		return joinPath(absSrcDirPath, slicedChildUrl);
 	} else {
 		const { dir } = parsePath(absParentPath);
-		return joinPath(dir, childUrl)
+		return joinPath(dir, slicedChildUrl)
 	}
 }
